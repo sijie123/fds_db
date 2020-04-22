@@ -1,7 +1,7 @@
 CREATE TABLE Restaurants (
     name        VARCHAR(50),
     location    VARCHAR(100) NOT NULL,
-    minOrder   MONEY DEFAULT 0,
+    minOrder    MONEY DEFAULT 0,
     PRIMARY KEY (name)
 );
 

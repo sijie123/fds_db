@@ -4,7 +4,7 @@ CREATE TABLE FoodOrders (
     foodName        VARCHAR(50),
     quantity        INTEGER DEFAULT 1,
     PRIMARY KEY (orderId, restaurantName, foodName),
-    FOREIGN KEY (orderId) REFERENCES Orders(id),
+    FOREIGN KEY (orderId, restaurantName) REFERENCES Orders(id, restaurantName),
     FOREIGN KEY (foodName, restaurantName) REFERENCES Food(name, restaurantName)
 );
 

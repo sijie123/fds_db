@@ -9,11 +9,3 @@ CREATE TABLE Food (
     PRIMARY KEY (restaurantName, name),
     FOREIGN KEY (restaurantName) REFERENCES Restaurants(name) ON DELETE CASCADE ON UPDATE CASCADE
 );
-
-CREATE OR REPLACE FUNCTION refresh_qty()
-returns VOID as $$
-begin
-    UPDATE  Food
-    SET     currQty = maxQty;
-end
-$$ language plpgsql;

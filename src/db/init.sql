@@ -29,4 +29,6 @@ CREATE TABLE Users (
 
 \i locations.sql
 
+\i util.sql
+
 \i stats.sql

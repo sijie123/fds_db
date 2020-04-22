@@ -18,16 +18,41 @@ CREATE TABLE Orders (
     delivery        TIMESTAMP   -- date and time food was delivered
                     check(delivery IS NULL OR (collection IS NOT NULL AND delivery >= collection)),
     
+    restaurantName      VARCHAR(50) NOT NULL,
     customerName        VARCHAR(50) NOT NULL,
     riderName           VARCHAR(50) NOT NULL, -- NOTE: order can only be made after rider is found
     
     PRIMARY KEY (id),
+    FOREIGN KEY (restaurantName) REFERENCES Restaurants(name),
+    CONSTRAINT foodorder_key UNIQUE (id, restaurantName),
     FOREIGN KEY (customerName) REFERENCES Customers(username),
     FOREIGN KEY (riderName) REFERENCES Riders(username)
 );
 
 ALTER TABLE Riders 
 ADD FOREIGN KEY (orderid) REFERENCES Orders(id);
+
+-- When an order is added, we verify the order satisfies the minimum order
+CREATE OR REPLACE FUNCTION verify_minimum() 
+returns TRIGGER AS $$
+declare
+    restaurantMinOrder  MONEY := (
+        SELECT  R.minOrder
+        FROM    Restaurants R
+        WHERE   R.name = NEW.restaurantName);
+begin
+    IF NEW.totalCost < restaurantMinOrder THEN
+        RAISE EXCEPTION 'Order does not meet the minimum order! (% < %)', NEW.riderName, restaurantMinOrder;
+    END IF;
+    return NEW;
+end
+$$ language plpgsql;
+
+CREATE TRIGGER verify_minimum_trigger
+    BEFORE INSERT
+    ON Orders
+    FOR EACH ROW
+    EXECUTE PROCEDURE verify_minimum();
 
 -- When an order is added, we update the assigned rider's current order to this one
 CREATE OR REPLACE FUNCTION busy_rider() 
@@ -52,107 +77,24 @@ end
 $$ language plpgsql;
 
 CREATE TRIGGER busy_rider_trigger
-    AFTER INSERT -- NOTE: Only on insert
+    AFTER INSERT
     ON Orders
     FOR EACH ROW
     EXECUTE PROCEDURE busy_rider();
 
--- Update departure time of the order (by the rider)
-CREATE OR REPLACE FUNCTION riderDeparture(
-    riderName   VARCHAR(50),
-    currenttime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
-returns TIMESTAMP as $$
-declare
-    oid INTEGER := (SELECT orderid FROM Riders WHERE username = riderName);
+-- When an order is added, we add reward points for the customer
+CREATE OR REPLACE FUNCTION add_points() 
+returns TRIGGER AS $$
 begin
-    IF oid IS NULL THEN
-        RAISE EXCEPTION 'Rider % does not have an order', riderName;
-    END IF;
-
-    UPDATE  Orders
-    SET     departure = currenttime
-    WHERE   id = oid;
-    RETURN currenttime;
+    UPDATE  Customers
+    SET     rewardPoints = rewardPoints + NEW.totalCost::NUMERIC::FLOAT::INTEGER
+    WHERE   username = NEW.customerName;
+    return NEW;
 end
 $$ language plpgsql;
 
--- Update departure time of the order (by the rider)
-CREATE OR REPLACE FUNCTION riderDeparture(
-    riderName   VARCHAR(50),
-    currenttime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
-returns TIMESTAMP as $$
-declare
-    oid INTEGER := (SELECT orderid FROM Riders WHERE username = riderName);
-begin
-    IF oid IS NULL THEN
-        RAISE EXCEPTION 'Rider % does not have an order', riderName;
-    END IF;
-
-    UPDATE  Orders
-    SET     departure = currenttime
-    WHERE   id = oid;
-    RETURN currenttime;
-end
-$$ language plpgsql;
-
--- Update arrival time of the order (by the rider)
-CREATE OR REPLACE FUNCTION riderArrival(
-    riderName   VARCHAR(50),
-    currenttime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
-returns TIMESTAMP as $$
-declare
-    oid INTEGER := (SELECT orderid FROM Riders WHERE username = riderName);
-begin
-    IF oid IS NULL THEN
-        RAISE EXCEPTION 'Rider % does not have an order', riderName;
-    END IF;
-
-    UPDATE  Orders
-    SET     arrival = currenttime
-    WHERE   id = oid;
-    RETURN currenttime;
-end
-$$ language plpgsql;
-
--- Update collection time of the order (by the rider)
-CREATE OR REPLACE FUNCTION riderCollection(
-    riderName   VARCHAR(50),
-    currenttime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
-returns TIMESTAMP as $$
-declare
-    oid INTEGER := (SELECT orderid FROM Riders WHERE username = riderName);
-begin
-    IF oid IS NULL THEN
-        RAISE EXCEPTION 'Rider % does not have an order', riderName;
-    END IF;
-
-    UPDATE  Orders
-    SET     collection = currenttime
-    WHERE   id = oid;
-    RETURN currenttime;
-end
-$$ language plpgsql;
-
--- Update delivery time of the order (by the rider)
-CREATE OR REPLACE FUNCTION riderDelivery(
-    riderName   VARCHAR(50),
-    currenttime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
-returns TIMESTAMP as $$
-declare
-    oid INTEGER := (SELECT orderid FROM Riders WHERE username = riderName);
-begin
-    IF oid IS NULL THEN
-        RAISE EXCEPTION 'Rider % does not have an order', riderName;
-    END IF;
-
-    UPDATE  Riders
-    SET     orderid = NULL
-    WHERE   orderid = oid;
-
-    UPDATE  Orders
-    SET     delivery = currenttime
-    WHERE   id = oid;
-
-    RETURN currenttime;
-end
-$$ language plpgsql;
+CREATE TRIGGER add_points_trigger
+    AFTER INSERT
+    ON Orders
+    FOR EACH ROW
+    EXECUTE PROCEDURE add_points();

@@ -336,11 +336,11 @@ $$ language plpgsql;
  */
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     creation,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'Ridge View Residential College', 9.40, 'CASH',
-    '2020-03-21 17:01',
-    'customer3', 'rider2');
+    '2020-04-21 17:01',
+    'Gongcha', 'customer3', 'rider2');
 SELECT riderDeparture('rider2');
 SELECT riderArrival('rider2');
 SELECT riderCollection('rider2');
@@ -363,11 +363,11 @@ INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
  */
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     creation, departure, arrival, collection, delivery,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 5, 'CARD',
     '2020-03-21 17:01', '2020-03-21 18:02', '2020-03-21 18:03', '2020-03-21 18:04', '2020-03-21 18:05',
-    'customer1', 'rider4');
+    'Ma La Xiang Guo', 'customer1', 'rider4');
 INSERT INTO FoodOrders (orderId, restaurantName, foodName) VALUES
 ((SELECT MAX(id) FROM Orders), 'Ma La Xiang Guo', 'Mala');
 INSERT INTO FoodReviews (orderId, restaurantName, foodName, customerName) VALUES

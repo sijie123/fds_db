@@ -183,13 +183,41 @@ begin;
  */
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     creation, departure, arrival, collection, delivery,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
     '2020-03-21 17:01', '2020-03-21 18:02', '2020-03-21 18:03', '2020-03-21 18:04', '2020-03-21 18:05',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 INSERT INTO FoodOrders (orderId, restaurantName, foodName) VALUES
 ((SELECT MAX(id) FROM Orders), 'Pasta Express', 'Carbonara');
+commit;
+
+begin;
+/* 
+ * Testing FoodOrder foreign key constraint on order
+ */
+INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
+                    creation, departure, arrival, collection, delivery,
+                    restaurantName, customerName, riderName) VALUES 
+(
+    'PGP', 2, 'CARD',
+    '2020-03-21 17:01', '2020-03-21 18:02', '2020-03-21 18:03', '2020-03-21 18:04', '2020-03-21 18:05',
+    'Pasta Express', 'customer1', 'rider3');
+INSERT INTO FoodOrders (orderId, restaurantName, foodName) VALUES
+((SELECT MAX(id) FROM Orders), 'Gongcha', 'Carbonara');
+commit;
+
+begin;
+/* 
+ * Testing Order minimumOrder trigger
+ */
+INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
+                    creation, departure, arrival, collection, delivery,
+                    restaurantName, customerName, riderName) VALUES 
+(
+    'PGP', 9, 'CARD',
+    '2020-03-21 17:01', '2020-03-21 18:02', '2020-03-21 18:03', '2020-03-21 18:04', '2020-03-21 18:05',
+    'Uncle Penyet', 'customer1', 'rider3');
 commit;
 
 /* 
@@ -201,41 +229,41 @@ SELECT 'Orders: creation <= departure';
 begin;
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     creation, departure,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
     '2020-03-21 17:00', '2020-03-21 16:00',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 commit;
 
 SELECT 'Orders: departure <= arrival';
 begin;
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 SELECT riderArrival('rider3');
 commit;
 
 begin;
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     creation, departure,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
     '2030-03-21 17:00', '2030-03-21 18:00',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 SELECT riderArrival('rider3');
 commit;
 
 SELECT 'Orders: arrival <= collection';
 begin;
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 SELECT riderDeparture('rider3');
 SELECT riderCollection('rider3');
 commit;
@@ -243,21 +271,21 @@ commit;
 begin;
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     creation, departure, arrival,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
     '2030-03-21 17:00', '2030-03-21 18:00', '2030-03-21 19:00',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 SELECT riderCollection('rider3');
 commit;
 
 SELECT 'Orders: collection <= delivery';
 begin;
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 SELECT riderDeparture('rider3');
 SELECT riderArrival('rider3');
 SELECT riderDelivery('rider3');
@@ -266,26 +294,24 @@ commit;
 begin;
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     creation, departure, arrival, collection,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
     '2030-03-21 17:00', '2030-03-21 18:00', '2030-03-21 19:00', '2030-03-21 20:00',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 SELECT riderDelivery('rider3');
 commit;
 
 SELECT 'Riders: orderid null after delivery';
 begin;
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
-                    customerName, riderName) VALUES 
+                    restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 2, 'CARD',
-    'customer1', 'rider3');
+    'Pasta Express', 'customer1', 'rider3');
 SELECT riderDeparture('rider3');
 SELECT riderArrival('rider3');
 SELECT riderCollection('rider3');
 SELECT riderDelivery('rider3');
 SELECT (SELECT 'orderid:'), orderid FROM Riders WHERE username = 'rider3';
 ROLLBACK;
-
-
