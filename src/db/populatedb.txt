@@ -1,0 +1,2 @@
+\i init.sql
+\i insertdata.sql
