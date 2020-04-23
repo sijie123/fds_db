@@ -330,9 +330,9 @@ $$ language plpgsql;
 -- ORDERS, REVIEWS, RATINGS --
 
 /* 
- * customer3 ordered 2x green milk tea from Gongcha. Paid by CASH.
+ * customer3 ordered 2x green milk tea, 1x taro milk tea from Gongcha. Paid by CASH.
  * Delivered by rider2.
- * Very upset with the milk tea (rated 0), but happy with delivery (rated 5).
+ * Very upset with green milk tea (rated 0), happy with taro milk tea, happy with delivery (rated 5).
  */
 INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     creation,
