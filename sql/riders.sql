@@ -53,7 +53,7 @@ begin
 end 
 $$ language plpgsql;
 
-CREATE TRIGGER checkPartTimeSchedule_trigger
+CREATE TRIGGER _1checkPartTimeSchedule_trigger
     BEFORE INSERT
     ON PartTimeRiders
     FOR EACH ROW 
@@ -133,23 +133,51 @@ begin
 end 
 $$ language plpgsql;
 
-CREATE TRIGGER checkFullTimeSchedule_trigger
+CREATE TRIGGER _1checkFullTimeSchedule_trigger
     BEFORE INSERT
     ON FullTimeRiders
     FOR EACH ROW
     EXECUTE PROCEDURE checkFullTimeSchedule();
 
-CREATE OR REPLACE FUNCTION calculateBaseSalary()
-returns TRIGGER as $$ 
+CREATE OR REPLACE FUNCTION calculateBaseSalary(
+    riderName  VARCHAR(50),
+    isPartTime BOOLEAN DEFAULT NULL,
+    sched      BOOLEAN[7][12] DEFAULT NULL)
+returns MONEY as $$ 
 declare
-    sched   BOOLEAN[7][12] := NEW.ws;
+    isPartTime BOOLEAN := 
+    CASE
+        WHEN isPartTime IS NULL THEN (
+            EXISTS(
+                SELECT  1
+                FROM    PartTimeRiders
+                WHERE   username = riderName))
+        ELSE
+            (isPartTime)
+    END;
+    sched   BOOLEAN[7][12] := 
+    CASE
+        WHEN sched is NULL THEN (
+            CASE 
+                WHEN isPartTime THEN (
+                    SELECT  ws
+                    FROM    PartTimeRiders
+                    WHERE   username = riderName)
+                ELSE (
+                    SELECT  ws
+                    FROM    FullTimeRiders
+                    WHERE   username = riderName)
+            END)
+        ELSE
+            (sched)
+    END;
     cday    INTEGER := 1;
     cshift  INTEGER := 1;
     salary  MONEY := 0;
     hourly  MONEY := 0;
     peak    MONEY := 1;
 begin
-    IF TG_TABLE_NAME = 'parttimeriders' THEN
+    IF isPartTime THEN
         hourly := 7.5;
     ELSE
         hourly := 8;
@@ -170,25 +198,30 @@ begin
         cday := cday + 1;
         EXIT WHEN cday > 7;
     END LOOP;
-
-    IF TG_TABLE_NAME = 'parttimeriders' THEN
-        NEW.weeksalary := salary;
-    ELSE
-        NEW.monthsalary := salary * 4;
-    END IF;
-    
-    RETURN NEW;
+    RETURN salary;
 end 
 $$ language plpgsql;
 
-CREATE TRIGGER calculateBaseSalary_trigger
+CREATE OR REPLACE FUNCTION calculateBaseSalaryHelper()
+returns TRIGGER as $$ 
+begin
+    IF TG_TABLE_NAME = 'parttimeriders' THEN
+        NEW.weeksalary := calculateBaseSalary(NEW.username, 1::BOOLEAN, NEW.ws);
+    ELSE
+        NEW.monthsalary := calculateBaseSalary(NEW.username, 0::BOOLEAN, NEW.ws) * 4;
+    END IF;
+    RETURN NEW;
+end
+$$ language plpgsql;
+
+CREATE TRIGGER _2calculateBaseSalary_trigger
     BEFORE INSERT OR UPDATE OF ws
     ON FullTimeRiders
     FOR EACH ROW
-    EXECUTE PROCEDURE calculateBaseSalary();
+    EXECUTE PROCEDURE calculateBaseSalaryHelper();
 
-CREATE TRIGGER calculateBaseSalary_trigger
+CREATE TRIGGER _2calculateBaseSalary_trigger
     BEFORE INSERT OR UPDATE OF ws
     ON PartTimeRiders
     FOR EACH ROW
-    EXECUTE PROCEDURE calculateBaseSalary();
+    EXECUTE PROCEDURE calculateBaseSalaryHelper();

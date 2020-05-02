@@ -166,18 +166,28 @@ $$ language plpgsql;
 -- Resets all part-time riders week salary
 CREATE OR REPLACE FUNCTION resetPartimeRidersSalary()
 returns VOID as $$
+declare
+    rider   RECORD;
 begin
-    UPDATE  PartTimeRiders 
-    SET     weeksalary = 0;
+    FOR rider in SELECT * FROM PartTimeRiders LOOP
+        UPDATE  PartTimeRiders 
+        SET     weeksalary = calculateBaseSalary(username)
+        WHERE   username = rider.username;
+    END LOOP;
 end
 $$ language plpgsql;
 
 -- Resets all full-time riders week salary
 CREATE OR REPLACE FUNCTION resetFullimeRidersSalary()
 returns VOID as $$
+declare
+    rider   RECORD;
 begin
-    UPDATE  FullTimeRiders 
-    SET     monthsalary = 0;
+    FOR rider in SELECT * FROM FullTimeRiders LOOP
+        UPDATE  FullTimeRiders 
+        SET     monthsalary = calculateBaseSalary(username) * 4
+        WHERE   username = rider.username;
+    END LOOP;
 end
 $$ language plpgsql;
 
