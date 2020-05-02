@@ -1,0 +1,125 @@
+-- RESTAURANTS --
+INSERT INTO Restaurants (name, location) VALUES -- no minOrder
+('Arise & Shine @ E4', 'E4'),
+('Arise & Shine @ S16', 'S16'),
+('Central Square', 'Yusof Ishak House Level 2'),
+('Li Ji Coffeehouse', 'Frontier'),
+('Maxx Coffee', 'Central Library'),
+('Nami', 'innovation4.0'),
+('Salad Express X Pasta Express', 'The Deck Level 2'),
+('Reedz Cafe', 'Shaw Foundation Alumni'),
+('Ma La Xiang Guo', 'PGP'),
+('Pasta Express', 'Frontier'),
+('OMO Store', 'COM1'),
+('Uncle Penyet', 'The Deck Level 2');
+
+INSERT INTO Restaurants (name, location, minOrder) VALUES
+('Atempo', 'Yong Siew Toh Conservatory of Music', 5),
+('Bar Bar Black Sheep', 'Alice Lee Plaza', 15),
+('Cafe Delight', 'Ventus', 8),
+('Crave', 'Yusof Ishak House', 10),
+('Gongcha', 'University Town', 8),
+('Jewel Coffee', 'MD11', 10),
+('Old Chang Kee', 'Yusof Ishak House', 5),
+('Platypus Food Bar', 'S16', 10),
+('Poke Theory','One@KentRidge', 20),
+('The Tea Party', 'University Sports Centre', 15);
+
+-- RESTAURANT STAFF --
+INSERT INTO Staff (username, restaurantName) VALUES
+('arise_e4', 'Arise & Shine @ E4'),
+('arise_s16', 'Arise & Shine @ S16'),
+('atempo_yst', 'Atempo'),
+('sheeple', 'Bar Bar Black Sheep'),
+('cafeD', 'Cafe Delight'),
+('centralSq', 'Central Square'),
+('crave', 'Crave'),
+('jewel coffee', 'Jewel Coffee'),
+('liji', 'Li Ji Coffeehouse'),
+('maxx', 'Maxx Coffee'),
+('nami', 'Nami'),
+('old ck', 'Old Chang Kee'),
+('saladxpasta', 'Salad Express X Pasta Express'),
+('reedz', 'Reedz Cafe'),
+('platypupsgary', 'Platypus Food Bar'),
+('mala', 'Ma La Xiang Guo'),
+('teaparty', 'The Tea Party'),
+('betterpasta', 'Pasta Express'),
+('salmon', 'Poke Theory'),
+('uncle', 'Uncle Penyet'),
+('bbt', 'Gongcha')
+;
+
+-- FOOD --
+INSERT INTO Food (name, restaurantName, price, maxQty, currQty) VALUES
+('Mala', 'Ma La Xiang Guo', 5, 100, 100),
+('Carbonara', 'Pasta Express', 4.80, 150, 0),
+('Aglio Olio', 'Pasta Express', 4.80, 150, 1),
+('Shin Ramyun', 'OMO Store', 2.20, 50, 0),
+('Nasi Ayam Penyet', 'Uncle Penyet', 4.20, 100, 0),
+('Nasi Dory Penyet', 'Uncle Penyet', 5.20, 75, 1),
+
+
+('Curry Puff','Arise & Shine @ E4', 1.5, 50, 3),
+('Fishballs','Arise & Shine @ E4', 1.2, 20, 1),
+('Seaweed Chicken','Arise & Shine @ E4', 1.2, 20, 20),
+('Waffle','Arise & Shine @ E4', 1.8, 100, 20),
+('Fishcake','Arise & Shine @ E4', 1.2, 15, 0),
+('Curry Puff','Arise & Shine @ S16', 1.5, 50, 23),
+('Fishballs','Arise & Shine @ S16', 1.2, 30, 12),
+('Seaweed Chicken','Arise & Shine @ S16', 1.2, 40, 39),
+('Waffle','Arise & Shine @ S16', 1.8, 150, 90),
+('Fishcake','Arise & Shine @ S16', 1.2, 10, 3),
+('Atempo', , ,),
+('Bar Bar Black Sheep', , ,),
+('Cafe Delight', , ,),
+('Central Square', , ,),
+('Crave', , ,),
+('Jewel Coffee', , ,),
+('Li Ji Coffeehouse', , ,),
+('Maxx Coffee', , ,),
+('Nami', , ,),
+("Curry 'O",'Old Chang Kee', 1.5, 100, 12),
+("Chicken Mushroom 'O",'Old Chang Kee', 1.5, 80, 2),
+("Sardine 'O",'Old Chang Kee', 1.5, 50, 6),
+('Chicken Wing','Old Chang Kee', 1.8, 100, 43),
+('Gyoza OnStik','Old Chang Kee', 1.6, 75, 23),
+('Salad Express X Pasta Express', , ,),
+('Reedz Cafe', , ,),
+('Platypus Food Bar', , ,),
+('Ma La Xiang Guo', , ,),
+('The Tea Party', , ,),
+('Pasta Express', , ,),
+('Poke Theory', , ,),
+('Uncle Penyet', , ,),
+('Earl Grey Milk Tea', 'Gongcha', 2.80, 0, 0),
+('Green Milk Tea', 'Gongcha', 3.20, 0, 0),
+('Taro Milk Tea', 'Gongcha', 3, 0, 0),
+;
+
+-- CATEGORIES --
+INSERT INTO Categories (cname) VALUES
+('Chinese'),
+('Asian'),
+('Western'),
+('Beverages'),
+('Indonesian'),
+('Italian');
+
+INSERT INTO FoodCategories(foodName, restaurantName, category) VALUES
+('Mala', 'Ma La Xiang Guo', 'Chinese'),
+('Mala', 'Ma La Xiang Guo', 'Asian'),
+('Carbonara', 'Pasta Express', 'Western'),
+('Carbonara', 'Pasta Express', 'Italian'),
+('Aglio Olio', 'Pasta Express', 'Italian'),
+('Aglio Olio', 'Pasta Express', 'Western'),
+('Nasi Ayam Penyet', 'Uncle Penyet', 'Indonesian'),
+('Nasi Ayam Penyet', 'Uncle Penyet', 'Asian'),
+('Nasi Dory Penyet', 'Uncle Penyet', 'Indonesian'),
+('Nasi Dory Penyet', 'Uncle Penyet', 'Asian'),
+('Earl Grey Milk Tea', 'Gongcha', 'Beverages'),
+('Earl Grey Milk Tea', 'Gongcha', 'Asian'),
+('Green Milk Tea', 'Gongcha', 'Beverages'),
+('Green Milk Tea', 'Gongcha', 'Asian'),
+('Taro Milk Tea', 'Gongcha', 'Beverages'),
+('Taro Milk Tea', 'Gongcha', 'Asian');

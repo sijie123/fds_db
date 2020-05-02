@@ -1,32 +1,37 @@
-CREATE TABLE Riders (
+CREATE TABLE PartTimeRiders (
     username    VARCHAR(50),
-    latitude    NUMERIC NOT NULL,
-    longitude   NUMERIC NOT NULL,
-    orderid     INTEGER,
+    ws          BOOLEAN[7][12] NOT NULL,
+    weeksalary  MONEY DEFAULT 0,
     PRIMARY KEY (username),
-    FOREIGN KEY (username) REFERENCES Users(username) ON DELETE CASCADE ON UPDATE CASCADE
+    FOREIGN KEY (username) REFERENCES Riders ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE OR REPLACE FUNCTION checkPartTimeSchedule(BOOLEAN[7][12])
-returns BOOLEAN as $$ 
+CREATE TABLE FullTimeRiders (
+    username    VARCHAR(50),
+    ws          BOOLEAN[7][12] NOT NULL,
+    monthsalary MONEY DEFAULT 0,
+    PRIMARY KEY (username),
+    FOREIGN KEY (username) REFERENCES Riders ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE OR REPLACE FUNCTION checkPartTimeSchedule()
+returns TRIGGER as $$ 
 declare
+    sched   BOOLEAN[7][12] := NEW.ws;
     cday    INTEGER := 1;
     cshift  INTEGER := 1;
     counter INTEGER := 0;
     htotal  INTEGER := 0;
-    result  BOOLEAN := 0;
 begin
     LOOP
-        IF ($1)[cday][cshift] THEN
+        IF sched[cday][cshift] THEN
             htotal := htotal + 1;
             counter := counter + 1;
         ELSE
             counter := 0;
         END IF;
         IF counter > 4 THEN
-            RAISE EXCEPTION 'consec check fail at cday: % cshift: %', cday, cshift;
-            result := 0;
-            RETURN result;
+            RAISE EXCEPTION 'Consec check fail at cday: % cshift: % for rider %', cday, cshift, NEW.username;
         END IF;
         IF cshift > 12 THEN
             cday := cday + 1;
@@ -38,24 +43,26 @@ begin
         EXIT WHEN cday > 7;
     END LOOP;
 
-    result := (htotal >= 10 AND htotal <= 48);
-    -- RAISE NOTICE 'htotal: %', htotal;
-    RETURN result;
+    IF (htotal < 10) THEN
+        RAISE EXCEPTION 'Insufficient hours (%) rider %', htotal, NEW.username;
+    ELSIF (htotal > 48) THEN
+        RAISE EXCEPTION 'Too many hours (%) rider %', htotal, NEW.username;
+    ELSE
+        RETURN NEW;
+    END IF;
 end 
 $$ language plpgsql;
 
-CREATE TABLE PartTimeRiders (
-    username    VARCHAR(50),
-    ws          BOOLEAN[7][12],
-    weeksalary  MONEY DEFAULT 0,
-    PRIMARY KEY (username),
-    FOREIGN KEY (username) REFERENCES Riders(username) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT wws_correct check(checkPartTimeSchedule(ws))
-);
+CREATE TRIGGER checkPartTimeSchedule_trigger
+    BEFORE INSERT
+    ON PartTimeRiders
+    FOR EACH ROW 
+    EXECUTE PROCEDURE checkPartTimeSchedule();
 
-CREATE OR REPLACE FUNCTION checkFullTimeSchedule(BOOLEAN[7][12])
-returns BOOLEAN as $$ 
+CREATE OR REPLACE FUNCTION checkFullTimeSchedule()
+returns TRIGGER as $$ 
 declare
+    sched   BOOLEAN[7][12] := NEW.ws;
     cday    INTEGER := 1;
     cshift  INTEGER := 1;
     zero12map BIT(12)   := B'000000000000';
@@ -87,7 +94,7 @@ begin
         sbitmap := sbitmap & zero12map;
         -- LOOP HOURS --
         LOOP
-            IF ($1)[cday][cshift] THEN
+            IF sched[cday][cshift] THEN
                 sbitmap := (sbitmap << 1) | one12map;
                 IF sctr = 0 THEN
                     sctr = cshift;
@@ -107,14 +114,12 @@ begin
         -- VERIFY HOURLY SCHEDULE --
         -- If not working today, continue --
         IF (sbitmap::INTEGER > 0) AND ((sctr > 5) OR ((sbitmap # wshifts[sctr])::INTEGER > 1)) THEN
-            RAISE EXCEPTION 'invalid hourly schedule at cday: % cshift: % schedule: %', cday, cshift, sbitmap;
-            result := 0;
-            RETURN result;
+            RAISE EXCEPTION 'Invalid hourly schedule for rider: %, cday: % cshift: % schedule: %', NEW.username, cday, cshift, sbitmap;
         END IF;
         cday := cday + 1;
         EXIT WHEN cday > 7;
     END LOOP;
-    -- VERY DAILY SCHEDULE -- 
+    -- VERIFY DAILY SCHEDULE -- 
     cday := 1;
     LOOP
         result := result OR ((dbitmap # wdays[cday])::INTEGER = 0);
@@ -122,17 +127,68 @@ begin
         EXIT WHEN cday > 7;
     END LOOP;
     IF NOT result THEN
-        RAISE EXCEPTION 'invalid daily schedule schedule: %', dbitmap;
+        RAISE EXCEPTION 'Invalid daily schedule for rider: %, schedule: %', NEW.username, dbitmap;
     END IF;    
-    RETURN result;
+    RETURN NEW;
 end 
 $$ language plpgsql;
 
-CREATE TABLE FullTimeRiders (
-    username    VARCHAR(50),
-    ws          BOOLEAN[7][12],
-    monthsalary MONEY DEFAULT 0,
-    PRIMARY KEY (username),
-    FOREIGN KEY (username) REFERENCES Riders(username) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT mws_correct check(checkFullTimeSchedule(ws))
-);
+CREATE TRIGGER checkFullTimeSchedule_trigger
+    BEFORE INSERT
+    ON FullTimeRiders
+    FOR EACH ROW
+    EXECUTE PROCEDURE checkFullTimeSchedule();
+
+CREATE OR REPLACE FUNCTION calculateBaseSalary()
+returns TRIGGER as $$ 
+declare
+    sched   BOOLEAN[7][12] := NEW.ws;
+    cday    INTEGER := 1;
+    cshift  INTEGER := 1;
+    salary  MONEY := 0;
+    hourly  MONEY := 0;
+    peak    MONEY := 1;
+begin
+    IF TG_TABLE_NAME = 'parttimeriders' THEN
+        hourly := 7.5;
+    ELSE
+        hourly := 8;
+    END IF;
+
+    LOOP
+        cshift := 1;
+        LOOP
+            IF (cshift BETWEEN 3 AND 4) OR (cday > 5) THEN
+                -- lunch peak (12-2pm) or weekend
+                salary := salary + (hourly + peak) * sched[cday][cshift]::int;
+            ELSE
+                salary := salary + hourly * sched[cday][cshift]::int;
+            END IF;
+            cshift := cshift + 1;
+            EXIT WHEN cshift > 12;
+        END LOOP;
+        cday := cday + 1;
+        EXIT WHEN cday > 7;
+    END LOOP;
+
+    IF TG_TABLE_NAME = 'parttimeriders' THEN
+        NEW.weeksalary := salary;
+    ELSE
+        NEW.monthsalary := salary * 4;
+    END IF;
+    
+    RETURN NEW;
+end 
+$$ language plpgsql;
+
+CREATE TRIGGER calculateBaseSalary_trigger
+    BEFORE INSERT OR UPDATE OF ws
+    ON FullTimeRiders
+    FOR EACH ROW
+    EXECUTE PROCEDURE calculateBaseSalary();
+
+CREATE TRIGGER calculateBaseSalary_trigger
+    BEFORE INSERT OR UPDATE OF ws
+    ON PartTimeRiders
+    FOR EACH ROW
+    EXECUTE PROCEDURE calculateBaseSalary();

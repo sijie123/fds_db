@@ -1,2 +1,2 @@
 \i init.sql
-\i insertdata.sql
+\i data/insertdata.sql

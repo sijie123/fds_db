@@ -167,15 +167,7 @@ INSERT INTO FullTimeRiders (username, ws) VALUES
     [0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]::BOOLEAN[]);
 
-DELETE FROM Users
-WHERE 
-    username = 'A' OR
-    username = 'B' OR
-    username = 'C' OR
-    username = 'D' OR
-    username = 'E' OR
-    username = 'F' OR
-    username = 'G';
+DELETE Users;
 
 begin;
 /* 
@@ -191,6 +183,7 @@ INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
 INSERT INTO FoodOrders (orderId, restaurantName, foodName) VALUES
 ((SELECT MAX(id) FROM Orders), 'Pasta Express', 'Carbonara');
 commit;
+SELECT * from FoodOrders;
 
 begin;
 /* 
@@ -219,7 +212,6 @@ INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
     '2020-03-21 17:01', '2020-03-21 18:02', '2020-03-21 18:03', '2020-03-21 18:04', '2020-03-21 18:05',
     'Uncle Penyet', 'customer1', 'rider3');
 commit;
-
 /* 
  * Testing timing contraints of Orders
  */
@@ -314,4 +306,15 @@ SELECT riderArrival('rider3');
 SELECT riderCollection('rider3');
 SELECT riderDelivery('rider3');
 SELECT (SELECT 'orderid:'), orderid FROM Riders WHERE username = 'rider3';
+ROLLBACK;
+
+/* 
+ * Test user-type constraint
+ */
+
+INSERT INTO Users VALUES
+('A', 'A');
+INSERT INTO Riders VALUES ('A', 0, 0);
+begin;
+INSERT INTO Managers VALUES ('A');
 ROLLBACK;

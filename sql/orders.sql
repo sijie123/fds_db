@@ -10,13 +10,13 @@ CREATE TABLE Orders (
 
     creation        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- date and time order was created
     departure       TIMESTAMP   -- date and time rider departed for restaurant
-                    check(departure IS NULL OR departure >= creation),
+                    CHECK (departure IS NULL OR departure >= creation),
     arrival         TIMESTAMP   -- date and time rider arrived at restaurant
-                    check(arrival IS NULL OR (departure IS NOT NULL AND arrival >= departure)),
+                    CHECK (arrival IS NULL OR (departure IS NOT NULL AND arrival >= departure)),
     collection      TIMESTAMP   -- date and time rider collected from restaurant
-                    check(collection IS NULL OR (arrival IS NOT NULL AND collection >= arrival)),
+                    CHECK (collection IS NULL OR (arrival IS NOT NULL AND collection >= arrival)),
     delivery        TIMESTAMP   -- date and time food was delivered
-                    check(delivery IS NULL OR (collection IS NOT NULL AND delivery >= collection)),
+                    CHECK (delivery IS NULL OR (collection IS NOT NULL AND delivery >= collection)),
     
     restaurantName      VARCHAR(50) NOT NULL,
     customerName        VARCHAR(50) NOT NULL,
@@ -42,7 +42,7 @@ declare
         WHERE   R.name = NEW.restaurantName);
 begin
     IF NEW.totalCost < restaurantMinOrder THEN
-        RAISE EXCEPTION 'Order does not meet the minimum order! (% < %)', NEW.riderName, restaurantMinOrder;
+        RAISE EXCEPTION 'Order does not meet the minimum order! (% < %)', NEW.totalCost, restaurantMinOrder;
     END IF;
     return NEW;
 end
@@ -98,3 +98,31 @@ CREATE TRIGGER add_points_trigger
     ON Orders
     FOR EACH ROW
     EXECUTE PROCEDURE add_points();
+
+CREATE OR REPLACE FUNCTION addOrderBonus()
+returns TRIGGER as $$
+declare
+    ok      BOOLEAN;
+    bonus   MONEY := 1;
+begin
+    SELECT true INTO ok FROM PartTimeRiders WHERE username = NEW.riderName;
+    IF FOUND THEN
+        -- part time rider
+        UPDATE PartTimeRiders
+        SET weeksalary = weeksalary + bonus
+        WHERE username = NEW.riderName;
+    ELSE
+        -- full time rider
+        UPDATE FullTimeRiders
+        SET monthsalary = monthsalary + bonus
+        WHERE username = NEW.riderName;
+    END IF;
+    RETURN NULL;
+end 
+$$ language plpgsql;
+
+CREATE TRIGGER addOrderBonus_trigger
+    AFTER UPDATE OF delivery
+    ON Orders
+    FOR EACH ROW
+    EXECUTE PROCEDURE addOrderBonus();

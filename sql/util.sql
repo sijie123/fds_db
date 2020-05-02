@@ -25,11 +25,11 @@ begin
     RETURN  QUERY 
         SELECT  R.username, R.latitude, R.longitude
         FROM    PartTimeRiders PTR, Riders R
-        WHERE   (PTR.ws[day][shift]) AND (PTR.username = R.username) AND (NOT R.job)
+        WHERE   (PTR.ws[day][shift]) AND (PTR.username = R.username) AND (R.orderid IS NULL)
         UNION
         SELECT  R.username, R.latitude, R.longitude
         FROM    FullTimeRiders FTR, Riders R
-        WHERE   (FTR.ws[day][shift]) AND (FTR.username = R.username) AND (NOT R.job);
+        WHERE   (FTR.ws[day][shift]) AND (FTR.username = R.username) AND (R.orderid IS NULL);
 end 
 $$ language plpgsql;
 
@@ -160,6 +160,24 @@ begin
     WHERE   id = oid;
 
     RETURN currenttime;
+end
+$$ language plpgsql;
+
+-- Resets all part-time riders week salary
+CREATE OR REPLACE FUNCTION resetPartimeRidersSalary()
+returns VOID as $$
+begin
+    UPDATE  PartTimeRiders 
+    SET     weeksalary = 0;
+end
+$$ language plpgsql;
+
+-- Resets all full-time riders week salary
+CREATE OR REPLACE FUNCTION resetFullimeRidersSalary()
+returns VOID as $$
+begin
+    UPDATE  FullTimeRiders 
+    SET     monthsalary = 0;
 end
 $$ language plpgsql;
 

@@ -3,18 +3,8 @@
 DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
 
-CREATE TABLE Users (
-    username        VARCHAR(50),
-    password        VARCHAR(50),
-    token           VARCHAR(50),
-    creationdate    DATE DEFAULT CURRENT_DATE,
-    PRIMARY KEY (username)
-);
-
-\i customers.sql
-\i staff.sql
+\i users.sql
 \i riders.sql
-\i managers.sql
 
 \i restaurants.sql
 \i food.sql

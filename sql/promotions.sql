@@ -28,28 +28,14 @@
 
 CREATE TABLE CodePromotions (
     id          INTEGER GENERATED ALWAYS AS IDENTITY,
-    startdate   DATE NOT NULL DEFAULT CURRENT_DATE,
-    enddate     DATE, -- NULL means perm
+    startDate   DATE NOT NULL DEFAULT CURRENT_DATE,
+    endDate     DATE, -- NULL means permanent
     code        VARCHAR(10) UNIQUE NOT NULL, -- Must be lowercase, since stored procedures all lowercase
     description VARCHAR(100) DEFAULT '',
-    usecount    INTEGER DEFAULT 0,
+    useCount    INTEGER DEFAULT 0,
 
     PRIMARY KEY(id)
 );
-
-CREATE OR REPLACE FUNCTION code_lower() 
-returns TRIGGER AS $$
-begin
-    NEW.code := LOWER(NEW.code);
-    return NEW;
-end
-$$ language plpgsql;
-
-CREATE TRIGGER code_lower_trigger
-    BEFORE UPDATE OR INSERT
-    ON CodePromotions
-    FOR EACH ROW
-    EXECUTE PROCEDURE code_lower();
 
 CREATE TABLE RestaurantPromotions (
     id      INTEGER,
@@ -66,6 +52,20 @@ CREATE TABLE FDSPromotions (
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES CodePromotions(id)
 );
+
+CREATE OR REPLACE FUNCTION code_lower() 
+returns TRIGGER AS $$
+begin
+    NEW.code := LOWER(NEW.code);
+    return NEW;
+end
+$$ language plpgsql;
+
+CREATE TRIGGER code_lower_trigger
+    BEFORE UPDATE OR INSERT
+    ON CodePromotions
+    FOR EACH ROW
+    EXECUTE PROCEDURE code_lower();
 
 CREATE OR REPLACE FUNCTION checkPromotionExists(VARCHAR(10))
 returns BOOLEAN as $$

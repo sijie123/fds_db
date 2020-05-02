@@ -4,7 +4,7 @@ CREATE TABLE DeliveryRatings (
     customerName    VARCHAR(50) NOT NULL,
     rating          INTEGER CHECK (rating <= 5),
     PRIMARY KEY (orderId),
-    FOREIGN KEY (orderId) REFERENCES Orders(id),
-    FOREIGN KEY (riderName) REFERENCES Riders(username),
-    FOREIGN KEY (customerName) REFERENCES Customers(username)
+    FOREIGN KEY (orderId) REFERENCES Orders,
+    FOREIGN KEY (riderName) REFERENCES Riders,
+    FOREIGN KEY (customerName) REFERENCES Customers
 );

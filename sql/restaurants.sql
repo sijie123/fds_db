@@ -6,5 +6,4 @@ CREATE TABLE Restaurants (
 );
 
 ALTER TABLE Staff 
-ADD restaurantName  VARCHAR(50) NOT NULL, -- restaurant staff works at
 ADD FOREIGN KEY (restaurantName) REFERENCES Restaurants(name);

@@ -29,6 +29,7 @@ returns Table (
     riderName       VARCHAR(50),
     year            INTEGER,
     month           INTEGER,
+    week            INTEGER,
     creation        TIMESTAMP,
     departure       TIMESTAMP,
     arrival         TIMESTAMP,
@@ -45,6 +46,7 @@ begin
             O.riderName,
             DATE_PART('YEAR', O.creation)::INTEGER as year, 
             DATE_PART('MONTH', O.creation)::INTEGER as month,
+            (DATE_PART('DAY', O.creation)::INTEGER / 7)  as week,
             O.creation,
             O.departure,
             O.arrival,
@@ -96,80 +98,8 @@ begin
 end 
 $$ language plpgsql;
 
-CREATE OR REPLACE FUNCTION ridersOrdersStatsMonthly()
-returns Table (
-    year            INTEGER,
-    month           INTEGER,
-    riderName       VARCHAR(50),
-    countOrders     INTEGER,
-    sumInterval     INTERVAL,
-    avgInterval     INTERVAL,
-    sumRating       INTEGER,
-    avgRating       INTEGER,
-    salary          MONEY) as $$
-begin
-    RETURN QUERY 
-        (SELECT      
-            OD.year as year,
-            OD.month as month, 
-            OD.riderName as riderName,
-            count(OD.delivery)::INTEGER,
-            sum(age(OD.delivery, OD.departure)),
-            sum(age(OD.delivery, OD.departure))/count(OD.delivery),
-            count(DR.rating)::INTEGER,
-            sum(DR.rating)::INTEGER/count(DR.rating)::INTEGER,
-            CASE
-                WHEN EXISTS(
-                    SELECT  1 
-                    FROM    PartTimeRiders
-                    WHERE   username = OD.riderName) THEN (
-                        SELECT  weeksalary
-                        FROM    PartTimeRiders
-                        WHERE   username = OD.riderName
-                        ) * 4 + 1::MONEY * count(OD.delivery)
-                ELSE (
-                    SELECT  monthsalary
-                    FROM    FullTimeRiders
-                    WHERE   username = OD.riderName
-                    ) + 1::MONEY * count(OD.delivery)
-            END as salary
-        FROM        parseOrdersDate() as OD, DeliveryRatings as DR
-        WHERE       OD.delivery IS NOT NULL AND DR.orderId = OD.id
-        GROUP BY    (OD.year, OD.month, OD.riderName))
-        UNION
-        (SELECT      
-            OD.year as year,
-            OD.month as month, 
-            R.username as riderName,
-            NULL::INTEGER,
-            NULL::INTERVAL,
-            NULL::INTERVAL,
-            NULL::INTEGER,
-            NULL::INTEGER,
-            CASE
-                WHEN EXISTS(
-                    SELECT  1 
-                    FROM    PartTimeRiders
-                    WHERE   username = R.username) THEN (
-                        SELECT  weeksalary
-                        FROM    PartTimeRiders PTR
-                        WHERE   PTR.username = R.username
-                        ) * 4
-                ELSE (
-                    SELECT  monthsalary
-                    FROM    FullTimeRiders FTR
-                    WHERE   FTR.username = R.username
-                    )
-            END as salary
-        FROM        parseOrdersDate() as OD, Riders as R
-        WHERE       NOT EXISTS (
-            SELECT  1
-            FROM    parseOrdersDate() as OD2
-            WHERE   OD2.year = OD.year AND OD2.month = OD.month AND OD2.riderName = R.username)
-        GROUP BY    (OD.year, OD.month, R.username))
-        ORDER BY    year DESC, month DESC, riderName ASC;
-end 
-$$ language plpgsql;
+-- Special case where we store statistics history, since past salary is determined by past work schedule, which may be different
+\i riderstats.sql;
 
 -- ###############
 -- ## Restaurant #
@@ -271,5 +201,25 @@ begin
         FROM        ridersOrdersStatsMonthly() as ROSM
         WHERE       ROSM.riderName = $1
         ORDER BY    ROSM.year DESC, ROSM.month DESC, ROSM.riderName ASC;
+end 
+$$ language plpgsql;
+
+-- ###############
+-- ## Riders #####
+-- ###############
+
+CREATE OR REPLACE FUNCTION singleCustomerOrdersStatsMonthly(VARCHAR(50))
+returns Table (
+    year            INTEGER,
+    month           INTEGER,
+    customerName    VARCHAR(50),
+    count           INTEGER,
+    sum             MONEY) as $$
+begin
+    RETURN QUERY 
+        SELECT      *
+        FROM        customersOrdersStatsMonthly() as COSM
+        WHERE       COSM.customerName = $1
+        ORDER BY    COSM.year DESC, COSM.month DESC, COSM.customerName ASC;
 end 
 $$ language plpgsql;
