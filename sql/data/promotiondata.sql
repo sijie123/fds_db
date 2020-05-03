@@ -140,8 +140,8 @@ $$ language plpgsql;
 SELECT addPromotion(
     promocode=>'TAROMTEXP',
     promodescription=>'50% Taro Milk Tea!',
-    promostartdate=>'2020-01-29',
-    promoenddate=>'2020-12-29',
+    promostartdate=>'2010-01-29',
+    promoenddate=>'2010-12-29',
     rname=>'Gongcha');
 SELECT implementPromotion(
     promocode=>'TAROMTEXP',

@@ -2,6 +2,48 @@
 -- #### Rider ####
 -- ###############  
 
+CREATE OR REPLACE FUNCTION getOrderInfo(riderName VARCHAR(50))
+returns Table(
+    deliveryLocation    VARCHAR(100),
+    totalCost           MONEY,
+    paymentMethod       PAYMENT_METHOD,
+    creation            TIMESTAMP,
+    departure           TIMESTAMP,
+    arrival             TIMESTAMP,
+    collection          TIMESTAMP,
+    delivery            TIMESTAMP,
+    restaurantName      VARCHAR(50),
+    customerName        VARCHAR(50)
+    ) as $$
+declare
+    orderid INTEGER := (
+        SELECT  orderid
+        FROM    Riders R
+        WHERE   R.username = riderName);
+begin
+    IF orderid IS NULL THEN
+        RAISE EXCEPTION 'Rider % does not have an order!', riderName;
+    ELSE
+        RETURN QUERY (
+            SELECT
+                O.deliveryLocation,
+                O.totalCost,
+                O.paymentMethod,
+                O.creation,
+                O.departure,
+                O.arrival,
+                O.collection,
+                O.delivery,
+                O.restaurantName,
+                O.customerName
+            FROM    Orders O
+            WHERE   O.id = orderid
+            LIMIT   1);
+    END IF;
+end
+$$ language plpgsql;
+
+
 -- Note that assumes correct timezone (rn now() gives me +00)
 CREATE OR REPLACE FUNCTION findAvailable(TIMESTAMPTZ)
 returns Table (
@@ -209,5 +251,27 @@ returns VOID as $$
 begin
     UPDATE  Food
     SET     currQty = maxQty;
+end
+$$ language plpgsql;
+
+-- ###############
+-- #### Promo  ###
+-- ###############
+
+CREATE OR REPLACE FUNCTION getAvailablePromotions()
+returns Table (
+    id          INTEGER,
+    startDate   DATE,
+    endDate     DATE,
+    code        VARCHAR(10),
+    description VARCHAR(100),
+    rname       VARCHAR(50)) as $$
+begin
+    RETURN QUERY (
+        SELECT  CP.id, CP.startDate, CP.endDate, CP.code, CP.description, RP.rname
+        FROM    CodePromotions CP LEFT JOIN RestaurantPromotions RP on (CP.id = RP.id)
+        WHERE
+            CP.startDate <= CURRENT_TIMESTAMP AND
+            (CP.endDate is NULL OR CURRENT_TIMESTAMP <= CP.endDate));
 end
 $$ language plpgsql;
