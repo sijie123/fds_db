@@ -37,7 +37,7 @@ INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod,
                     restaurantName, customerName, riderName) VALUES 
 (
     'PGP', 5, 'CARD',
-    '2020-03-21 17:01', '2020-03-21 18:02', '2020-03-21 18:03', '2020-03-21 18:04', '2020-03-21 18:05',
+    '2020-03-21 17:01', '2020-03-21 18:02', '2020-03-21 18:03', '2020-03-21 18:04', NULL,
     'Ma La Xiang Guo', 'customer1', 'rider4');
 INSERT INTO FoodOrders (orderId, restaurantName, foodName) VALUES
 ((SELECT MAX(id) FROM Orders), 'Ma La Xiang Guo', 'Mala');
