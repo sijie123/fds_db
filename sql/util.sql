@@ -1,4 +1,25 @@
 -- ###############
+-- ## Customer ###
+-- ###############
+CREATE OR REPLACE FUNCTION getRecentLocations(cname VARCHAR(50))  
+returns Table (
+    deliveryLocation    VARCHAR(100),
+    latitude    NUMERIC,
+    longitude   NUMERIC) AS $$
+begin
+    RETURN QUERY (
+        SELECT
+            O.deliveryLocation,
+            L.latitude,
+            L.longitude
+        FROM        Orders O INNER JOIN Locations L ON (O.deliveryLocation = L.name)
+        WHERE       O.customerName = cname
+        ORDER BY    O.creation DESC
+        LIMIT       5);
+end
+$$ language plpgsql;
+
+-- ###############
 -- #### Rider ####
 -- ###############  
 
