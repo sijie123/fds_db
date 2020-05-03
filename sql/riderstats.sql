@@ -201,22 +201,3 @@ begin
         ORDER BY    year DESC, month DESC, riderName ASC;
 end 
 $$ language plpgsql;
-/*
-CREATE OR REPLACE FUNCTION ridersOrdersStatsMonthly()
-returns Table (
-    year            INTEGER,
-    month           INTEGER,
-    riderName       VARCHAR(50),
-    countOrders     INTEGER,
-    sumInterval     INTERVAL,
-    avgInterval     INTERVAL,
-    sumRating       INTEGER,
-    avgRating       INTEGER,
-    salary          MONEY) as $$
-begin
-    RETURN QUERY 
-        )
-        ORDER BY    year DESC, month DESC, riderName ASC;
-end 
-$$ language plpgsql;
-*/

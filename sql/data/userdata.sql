@@ -43,19 +43,19 @@ INSERT INTO Users (username, password) VALUES
 ('riderc', 'password');
 
 INSERT INTO Riders(username, latitude, longitude) VALUES
-('rider1', 1.314982, 103.764652), -- Clementi
-('rider2', 1.332999, 103.742237), -- Jurong
-('rider3', 1.303842, 103.774817), -- NUS University Town
-('rider4', 1.293599, 103.784325), -- KR MRT
-('rider5', 1.295538, 103.780417), -- MD1
-('rider6', 1.293446, 103.773358), -- KR Guild House
-('rider7', 1.292738, 103.774227), -- Mocthar Riady Building
-('rider8', 1.298534, 103.773948), -- Near YIH
-('rider9', 1.294345, 103.770830), -- Outside AS7
-('rider10', 1.292804, 103.7743488), -- NUS Hon Sui Sen Memorial Library
-('ridera', 1.2911406, 103.776854), -- NUS Institute of Systems Science
-('riderb', 1.2910274, 103.7798208), -- PGP Terminal
-('riderc', 1.2917251, 103.7827324) -- National University Health System
+('rider1', 1.314982, 103.764652),    -- Clementi
+('rider2', 1.332999, 103.742237),    -- Jurong
+('rider3', 1.303842, 103.774817),    -- NUS University Town
+('rider4', 1.293599, 103.784325),    -- KR MRT
+('rider5', 1.295538, 103.780417),    -- MD1
+('rider6', 1.293446, 103.773358),    -- KR Guild House
+('rider7', 1.292738, 103.774227),    -- Mocthar Riady Building
+('rider8', 1.298534, 103.773948),    -- Near YIH
+('rider9', 1.294345, 103.770830),    -- Outside AS7
+('rider10', 1.292804, 103.7743488),  -- NUS Hon Sui Sen Memorial Library
+('ridera', 1.2911406, 103.776854),   -- NUS Institute of Systems Science
+('riderb', 1.2910274, 103.7798208),  -- PGP Terminal
+('riderc', 1.2917251, 103.7827324)   -- National University Health System
 ;
 
 -- STAFF --
