@@ -10,6 +10,7 @@ CREATE TABLE PartTimeRidersStats (
                     CHECK (countOrders >= 0),
     sumInterval     INTERVAL,
     avgInterval     INTERVAL,
+    countRating     INTEGER,
     sumRating       INTEGER,
     avgRating       FLOAT,
     salary          MONEY DEFAULT 0,
@@ -27,6 +28,7 @@ CREATE TABLE FullTimeRidersStats (
                     CHECK (countOrders >= 0),
     sumInterval     INTERVAL,
     avgInterval     INTERVAL,
+    countRating     INTEGER,
     sumRating       INTEGER,
     avgRating       FLOAT,
     salary          MONEY DEFAULT 0,
@@ -46,7 +48,7 @@ declare
     updatemonth INTEGER := DATE_PART('MONTH', updatetime)::INTEGER;
     updateweek  INTEGER := (DATE_PART('DAY', updatetime)::INTEGER) / 7;
 begin
-    INSERT INTO PartTimeRidersStats(riderName, year, month, week, countOrders, sumInterval, avgInterval, sumRating, avgRating, salary)
+    INSERT INTO PartTimeRidersStats(riderName, year, month, week, countOrders, sumInterval, avgInterval, countRating, sumRating, avgRating, salary)
         (SELECT
             OD.riderName as riderName,
             OD.year as year,
@@ -55,7 +57,8 @@ begin
             count(OD.delivery)::INTEGER as countOrders,
             sum(age(OD.delivery, OD.departure)) as sumInterval,
             sum(age(OD.delivery, OD.departure))/count(OD.delivery) as avgInterval,
-            count(DR.rating)::INTEGER as sumRating,
+            count(DR.rating)::INTEGER as countRating,
+            sum(DR.rating)::INTEGER as sumRating,
             sum(DR.rating)::FLOAT/count(DR.rating)::FLOAT as avgRating,
             (SELECT weeksalary
             FROM    PartTimeRiders PTR
@@ -82,6 +85,7 @@ begin
             NULL::INTEGER as countOrders,
             NULL::INTERVAL as sumInterval,
             NULL::INTERVAL as avgInterval,
+            NULL::INTEGER as countRating,
             NULL::INTEGER as sumRating,
             NULL::FLOAT as avgRating,
             (SELECT weeksalary
@@ -116,7 +120,7 @@ declare
     updateyear  INTEGER := DATE_PART('YEAR', updatetime)::INTEGER;
     updatemonth INTEGER := DATE_PART('MONTH', updatetime)::INTEGER;
 begin
-    INSERT INTO FullTimeRidersStats(riderName, year, month, countOrders, sumInterval, avgInterval, sumRating, avgRating, salary)
+    INSERT INTO FullTimeRidersStats(riderName, year, month, countOrders, sumInterval, avgInterval, countRating, sumRating, avgRating, salary)
         (SELECT
             OD.riderName as riderName,
             OD.year as year,
@@ -124,7 +128,8 @@ begin
             count(OD.delivery)::INTEGER as countOrders,
             sum(age(OD.delivery, OD.departure)) as sumInterval,
             sum(age(OD.delivery, OD.departure))/count(OD.delivery) as avgInterval,
-            count(DR.rating)::INTEGER as sumRating,
+            count(DR.rating)::INTEGER as countRating,
+            sum(DR.rating)::INTEGER as sumRating,
             sum(DR.rating)::FLOAT/count(DR.rating)::FLOAT as avgRating,
             (SELECT monthsalary
             FROM    FullTimeRiders FTR
@@ -149,6 +154,7 @@ begin
             NULL::INTEGER as countOrders,
             NULL::INTERVAL as sumInterval,
             NULL::INTERVAL as avgInterval,
+            NULL::INTEGER as countRating,
             NULL::INTEGER as sumRating,
             NULL::FLOAT as avgRating,
             (SELECT monthsalary
@@ -177,6 +183,7 @@ returns Table (
     countOrders     INTEGER,
     sumInterval     INTERVAL,
     avgInterval     INTERVAL,
+    countRating     INTEGER,
     sumRating       INTEGER,
     avgRating       FLOAT,
     salary          MONEY) as $$
@@ -193,8 +200,9 @@ begin
             sum(PTRS.countOrders)::INTEGER,
             sum(PTRS.sumInterval),
             sum(PTRS.sumInterval)/sum(PTRS.countOrders),
+            sum(PTRS.countRating)::INTEGER,
             sum(PTRS.sumRating)::INTEGER,
-            sum(PTRS.sumRating)::FLOAT/sum(PTRS.countOrders)::FLOAT,
+            sum(PTRS.sumRating)::FLOAT/sum(PTRS.countRating)::FLOAT,
             sum(PTRS.salary)
         FROM        PartTimeRidersStats PTRS
         GROUP BY    (PTRS.year, PTRS.month, PTRS.riderName))
