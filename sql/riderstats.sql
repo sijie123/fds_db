@@ -5,7 +5,7 @@ CREATE TABLE PartTimeRidersStats (
     month           INTEGER
                     CHECK (month BETWEEN 1 AND 12),
     week            INTEGER
-                    CHECK (month BETWEEN 1 AND 4),
+                    CHECK (week BETWEEN 1 AND 4),
     countOrders     INTEGER
                     CHECK (countOrders >= 0),
     sumInterval     INTERVAL,
@@ -36,7 +36,7 @@ CREATE TABLE FullTimeRidersStats (
 
 -- Will insert into the PartTimeRidersStats
 -- Uses CURRENT schedule to calculate the statistics (salary in particular)
--- If an update was already performed once, will throw a PRIMARY KEY constraint error 
+-- If an update was already performed once, will throw a PRIMARY KEY constraint error
 CREATE OR REPLACE FUNCTION updatePartTimeRiderStats(
     updatetime  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
@@ -50,7 +50,7 @@ begin
         (SELECT
             OD.riderName as riderName,
             OD.year as year,
-            OD.month as month, 
+            OD.month as month,
             OD.week as week,
             count(OD.delivery)::INTEGER as countOrders,
             sum(age(OD.delivery, OD.departure)) as sumInterval,
@@ -74,10 +74,10 @@ begin
             DR.orderId = OD.id
         GROUP BY    (OD.year, OD.month, OD.week, OD.riderName))
         UNION
-        (SELECT      
+        (SELECT
             PTR.username as riderName,
             OD.year as year,
-            OD.month as month, 
+            OD.month as month,
             OD.week as week,
             NULL::INTEGER as countOrders,
             NULL::INTERVAL as sumInterval,
@@ -88,14 +88,14 @@ begin
             FROM    PartTimeRiders
             WHERE   username = PTR.username) as salary
         FROM        parseOrdersDate() as OD, PartTimeRiders as PTR
-        WHERE       
+        WHERE
             OD.year = updateyear AND
             OD.month = updatemonth AND
             OD.week = updateweek AND
             NOT EXISTS (
                 SELECT  1
                 FROM    parseOrdersDate() as OD2
-                WHERE   
+                WHERE
                     OD2.year = OD.year AND
                     OD2.month = OD.month AND
                     OD2.week = OD.week AND
@@ -107,7 +107,7 @@ $$ language plpgsql;
 
 -- Will insert into the FullTimeRidersStats
 -- Uses CURRENT schedule to calculate the statistics (salary in particular)
--- If an update was already performed once, will throw a PRIMARY KEY constraint error 
+-- If an update was already performed once, will throw a PRIMARY KEY constraint error
 CREATE OR REPLACE FUNCTION updateFullTimeRiderStats(
     updatetime  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
@@ -142,7 +142,7 @@ begin
             DR.orderId = OD.id
         GROUP BY    (OD.year, OD.month, OD.riderName))
         UNION
-        (SELECT      
+        (SELECT
             FTR.username as riderName,
             OD.year as year,
             OD.month as month,
@@ -155,13 +155,13 @@ begin
             FROM    FullTimeRiders
             WHERE   username = FTR.username) as salary
         FROM        parseOrdersDate() as OD, FullTimeRiders as FTR
-        WHERE       
+        WHERE
             OD.year = updateyear AND
             OD.month = updatemonth AND
             NOT EXISTS (
                 SELECT  1
                 FROM    parseOrdersDate() as OD2
-                WHERE   
+                WHERE
                     OD2.year = OD.year AND
                     OD2.month = OD.month AND
                     OD2.riderName = FTR.username)
@@ -181,7 +181,7 @@ returns Table (
     avgRating       FLOAT,
     salary          MONEY) as $$
 begin
-    RETURN QUERY 
+    RETURN QUERY
         (SELECT     *
         FROM        FullTimeRidersStats FTRS
         GROUP BY    (FTRS.year, FTRS.month, FTRS.riderName))
@@ -199,5 +199,5 @@ begin
         FROM        PartTimeRidersStats PTRS
         GROUP BY    (PTRS.year, PTRS.month, PTRS.riderName))
         ORDER BY    year DESC, month DESC, riderName ASC;
-end 
+end
 $$ language plpgsql;

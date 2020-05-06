@@ -15,7 +15,7 @@ CREATE TABLE FullTimeRiders (
 );
 
 CREATE OR REPLACE FUNCTION checkPartTimeSchedule()
-returns TRIGGER as $$ 
+returns TRIGGER as $$
 declare
     sched   BOOLEAN[7][12] := NEW.ws;
     cday    INTEGER := 1;
@@ -50,17 +50,17 @@ begin
     ELSE
         RETURN NEW;
     END IF;
-end 
+end
 $$ language plpgsql;
 
 CREATE TRIGGER _1checkPartTimeSchedule_trigger
     BEFORE INSERT
     ON PartTimeRiders
-    FOR EACH ROW 
+    FOR EACH ROW
     EXECUTE PROCEDURE checkPartTimeSchedule();
 
 CREATE OR REPLACE FUNCTION checkFullTimeSchedule()
-returns TRIGGER as $$ 
+returns TRIGGER as $$
 declare
     sched   BOOLEAN[7][12] := NEW.ws;
     cday    INTEGER := 1;
@@ -119,7 +119,7 @@ begin
         cday := cday + 1;
         EXIT WHEN cday > 7;
     END LOOP;
-    -- VERIFY DAILY SCHEDULE -- 
+    -- VERIFY DAILY SCHEDULE --
     cday := 1;
     LOOP
         result := result OR ((dbitmap # wdays[cday])::INTEGER = 0);
@@ -128,9 +128,9 @@ begin
     END LOOP;
     IF NOT result THEN
         RAISE EXCEPTION 'Invalid daily schedule for rider: %, schedule: %', NEW.username, dbitmap;
-    END IF;    
+    END IF;
     RETURN NEW;
-end 
+end
 $$ language plpgsql;
 
 CREATE TRIGGER _1checkFullTimeSchedule_trigger
@@ -143,9 +143,9 @@ CREATE OR REPLACE FUNCTION calculateBaseSalary(
     riderName  VARCHAR(50),
     isPartTime BOOLEAN DEFAULT NULL,
     sched      BOOLEAN[7][12] DEFAULT NULL)
-returns MONEY as $$ 
+returns MONEY as $$
 declare
-    isPartTime BOOLEAN := 
+    isPartTime BOOLEAN :=
     CASE
         WHEN isPartTime IS NULL THEN (
             EXISTS(
@@ -155,10 +155,10 @@ declare
         ELSE
             (isPartTime)
     END;
-    sched   BOOLEAN[7][12] := 
+    sched   BOOLEAN[7][12] :=
     CASE
         WHEN sched is NULL THEN (
-            CASE 
+            CASE
                 WHEN isPartTime THEN (
                     SELECT  ws
                     FROM    PartTimeRiders
@@ -199,11 +199,11 @@ begin
         EXIT WHEN cday > 7;
     END LOOP;
     RETURN salary;
-end 
+end
 $$ language plpgsql;
 
 CREATE OR REPLACE FUNCTION calculateBaseSalaryHelper()
-returns TRIGGER as $$ 
+returns TRIGGER as $$
 begin
     IF TG_TABLE_NAME = 'parttimeriders' THEN
         NEW.weeksalary := calculateBaseSalary(NEW.username, 1::BOOLEAN, NEW.ws);
@@ -225,3 +225,91 @@ CREATE TRIGGER _2calculateBaseSalary_trigger
     ON PartTimeRiders
     FOR EACH ROW
     EXECUTE PROCEDURE calculateBaseSalaryHelper();
+
+CREATE OR REPLACE FUNCTION riderTypeEnforcement()
+returns TRIGGER as $$
+declare
+    ok  BOOLEAN;
+begin
+    IF TG_TABLE_NAME = 'parttimerider' THEN
+        SELECT true INTO ok
+        FROM FullTimeRiders
+        WHERE username = NEW.username;
+    ELSE -- full-time rider
+        SELECT true INTO ok
+        FROM FullTimeRiders
+        WHERE username = NEW.username;
+    END IF;
+
+    IF FOUND THEN
+        RAISE EXCEPTION 'Rider % has an existing rider type', NEW.username;
+    END IF;
+
+    RETURN NEW;
+end
+$$ language plpgsql;
+
+CREATE TRIGGER riderTypeEnforcement_trigger
+    BEFORE INSERT OR UPDATE OF username
+    ON FullTimeRiders
+    FOR EACH ROW
+    EXECUTE PROCEDURE riderTypeEnforcement();
+
+CREATE TRIGGER riderTypeEnforcement_trigger
+    BEFORE INSERT OR UPDATE OF username
+    ON PartTimeRiders
+    FOR EACH ROW
+    EXECUTE PROCEDURE riderTypeEnforcement();
+
+CREATE OR REPLACE FUNCTION getHourIntervalWorkerCount()
+	RETURNS SETOF RECORD
+AS $$
+declare
+    score   INTEGER[7][12] := ARRAY[
+    -----1  2  3  4  5  6  7  8  9  A  B  C
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], -- M
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], -- T
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], -- W
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], -- T
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], -- F
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], -- S
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  -- S
+        ];
+    sched   BOOLEAN[7][12];
+    rider   VARCHAR(50);
+    d       INTEGER;
+    h       INTEGER;
+begin
+    FOR rider, sched IN
+        SELECT username, ws FROM PartTimeRiders
+        UNION
+        SELECT username, ws from FullTimeRiders
+    LOOP
+        d := 1;
+        LOOP -- days
+            h := 1;
+            LOOP -- hours
+                IF sched[d][h] THEN
+                    score[d][h] := score[d][h] + 1;
+                END IF;
+                h := h + 1;
+                EXIT WHEN h > 12;
+            END LOOP;
+            d := d + 1;
+            EXIT WHEN d > 7;
+        END LOOP;
+    END LOOP;
+
+    d := 1;
+    LOOP -- days
+        h := 1;
+        LOOP -- hours
+            RETURN NEXT ROW(d, h + 9, score[d][h]);
+            h := h + 1;
+            EXIT WHEN h > 12;
+        END LOOP;
+        d := d + 1;
+        EXIT WHEN d > 7;
+    END LOOP;
+end; $$
+language plpgsql;

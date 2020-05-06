@@ -9,7 +9,7 @@
 -- Restaraunt:  20% off for orders >= $100 in period
 -- FDS:         10% for 1st time customers
 -- FDS:         Free delivery in period
--- FDS:         
+-- FDS:
 
 -- Ideas:
 -- 1) hashmap rname/foodname/cat => discount
@@ -53,7 +53,7 @@ CREATE TABLE FDSPromotions (
     FOREIGN KEY (id) REFERENCES CodePromotions(id)
 );
 
-CREATE OR REPLACE FUNCTION code_lower() 
+CREATE OR REPLACE FUNCTION code_lower()
 returns TRIGGER AS $$
 begin
     NEW.code := LOWER(NEW.code);
@@ -99,7 +99,7 @@ begin
         FROM    CodePromotions CP
         WHERE   CP.code = $1
     );
-    return 
+    return
         (promostartdate <= curdate) AND
         (promoenddate IS NULL or curdate <= promoenddate);
 end
@@ -111,8 +111,8 @@ declare
     codelower   VARCHAR(10) := LOWER($1);
     oid         INTEGER := $2;
     orderdate   DATE := (
-        SELECT  creation::DATE 
-        FROM    Orders 
+        SELECT  creation::DATE
+        FROM    Orders
         WHERE   id = oid);
     orderrname  VARCHAR(50) := (
         SELECT  FO.restaurantName
@@ -122,7 +122,7 @@ declare
     );
     promorname  VARCHAR(50) := (
         SELECT  RP.rname
-        FROM    RestaurantPromotions RP, CodePromotions CP 
+        FROM    RestaurantPromotions RP, CodePromotions CP
         WHERE   CP.code = codelower AND CP.id = RP.id);
     result      BOOLEAN := 0::BOOLEAN;
 begin
@@ -137,18 +137,18 @@ begin
     ELSIF NOT checkPromotionValid(codelower, orderdate) THEN
         RAISE EXCEPTION 'Promotion has not started or has ended';
     END IF;
-    
+
     -- Check if promotion is retaurant specific, and verify order is from restaurant if yes
     IF promorname IS NOT NULL AND promorname <> orderrname THEN
         RAISE EXCEPTION 'Promotion is for %', promorname;
     END IF;
 
     -- Apply the promotion
-    EXECUTE 'SELECT _promo_' 
-            || codelower 
-            || '(' 
-            || (oid::VARCHAR) 
-            || ')' 
+    EXECUTE 'SELECT _promo_'
+            || codelower
+            || '('
+            || (oid::VARCHAR)
+            || ')'
     INTO    result;
 
     IF NOT result THEN
@@ -160,7 +160,7 @@ begin
         WHERE   code = codelower;
         RETURN result;
     END IF;
-end 
+end
 $$ language plpgsql;
 
 -- $1:          promotion code
@@ -171,8 +171,8 @@ $$ language plpgsql;
 CREATE OR REPLACE FUNCTION addPromotion(
     promocode       VARCHAR(10),
     promodescription VARCHAR(100),
-    promostartdate  DATE, 
-    promoenddate    DATE DEFAULT NULL, 
+    promostartdate  DATE,
+    promoenddate    DATE DEFAULT NULL,
     rname           VARCHAR(50) DEFAULT NULL)
 returns BOOLEAN as $$
 begin
@@ -208,7 +208,7 @@ $$ language plpgsql;
 -- $2:          function code
 -- ret:         boolean
 CREATE OR REPLACE FUNCTION implementPromotion(
-    promocode       VARCHAR(10), 
+    promocode       VARCHAR(10),
     functioncode    VARCHAR)
 returns BOOLEAN as $$
 begin
@@ -226,3 +226,38 @@ begin
     return 1::BOOLEAN;
 end
 $$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION promoTypeEnforcement()
+returns TRIGGER as $$
+declare
+    ok  BOOLEAN;
+begin
+    IF TG_TABLE_NAME = 'RestaurantPromotions' THEN
+        SELECT true INTO ok
+        FROM FDSPromotions
+        WHERE id = NEW.id;
+    ELSE -- FDS promo
+        SELECT true INTO ok
+        FROM RestaurantPromotions
+        WHERE id = NEW.id;
+    END IF;
+
+    IF FOUND THEN
+        RAISE EXCEPTION 'Promotion % has an existing promotion type', NEW.id;
+    END IF;
+
+    RETURN NEW;
+end
+$$ language plpgsql;
+
+CREATE TRIGGER promoTypeEnforcement_trigger
+    BEFORE INSERT OR UPDATE OF id
+    ON RestaurantPromotions
+    FOR EACH ROW
+    EXECUTE PROCEDURE promoTypeEnforcement();
+
+CREATE TRIGGER promoTypeEnforcement_trigger
+    BEFORE INSERT OR UPDATE OF id
+    ON FDSPromotions
+    FOR EACH ROW
+    EXECUTE PROCEDURE promoTypeEnforcement();

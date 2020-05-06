@@ -17,11 +17,11 @@ CREATE TABLE Orders (
                     CHECK (collection IS NULL OR (arrival IS NOT NULL AND collection >= arrival)),
     delivery        TIMESTAMP   -- date and time food was delivered
                     CHECK (delivery IS NULL OR (collection IS NOT NULL AND delivery >= collection)),
-    
+
     restaurantName      VARCHAR(50) NOT NULL,
     customerName        VARCHAR(50) NOT NULL,
     riderName           VARCHAR(50) NOT NULL, -- NOTE: order can only be made after rider is found
-    
+
     PRIMARY KEY (id),
     FOREIGN KEY (restaurantName) REFERENCES Restaurants(name),
     CONSTRAINT foodorder_key UNIQUE (id, restaurantName),
@@ -29,11 +29,11 @@ CREATE TABLE Orders (
     FOREIGN KEY (riderName) REFERENCES Riders(username)
 );
 
-ALTER TABLE Riders 
+ALTER TABLE Riders
 ADD FOREIGN KEY (orderid) REFERENCES Orders(id);
 
 -- When an order is added, we verify the order satisfies the minimum order
-CREATE OR REPLACE FUNCTION verify_minimum() 
+CREATE OR REPLACE FUNCTION verify_minimum()
 returns TRIGGER AS $$
 declare
     restaurantMinOrder  MONEY := (
@@ -55,35 +55,31 @@ CREATE TRIGGER verify_minimum_trigger
     EXECUTE PROCEDURE verify_minimum();
 
 -- When an order is added, we update the assigned rider's current order to this one
-CREATE OR REPLACE FUNCTION busy_rider() 
-returns TRIGGER AS $$
-begin
-    IF NOT EXISTS(
-        SELECT  1
-        FROM    Riders
-        WHERE   username = NEW.riderName AND orderid IS NULL
-    ) THEN
-        RAISE EXCEPTION 'Selected rider % is already busy with order %', NEW.riderName, (
-            SELECT  orderid 
-            FROM    Riders 
-            WHERE   username = NEW.riderName);
+CREATE OR REPLACE FUNCTION assign_order_to_rider() RETURNS trigger AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Riders WHERE username = NEW.riderName AND orderid IS NULL
+    )
+    THEN
+        RAISE EXCEPTION 'Selected rider % is already busy with order %',
+        NEW.riderName, ( SELECT orderid FROM Riders WHERE username = NEW.riderName );
     END IF;
 
-    UPDATE  Riders
-    SET     orderid = NEW.id
-    WHERE   username = NEW.riderName;
+    UPDATE Riders
+    SET orderid = NEW.id
+    WHERE username = NEW.riderName;
     return NEW;
 end
 $$ language plpgsql;
 
-CREATE TRIGGER busy_rider_trigger
+CREATE TRIGGER assign_order_to_rider_trigger
     AFTER INSERT
     ON Orders
     FOR EACH ROW
-    EXECUTE PROCEDURE busy_rider();
+    EXECUTE PROCEDURE assign_order_to_rider();
 
 -- When an order is added, we add reward points for the customer
-CREATE OR REPLACE FUNCTION add_points() 
+CREATE OR REPLACE FUNCTION add_points()
 returns TRIGGER AS $$
 begin
     UPDATE  Customers
@@ -118,7 +114,7 @@ begin
         WHERE username = NEW.riderName;
     END IF;
     RETURN NULL;
-end 
+end
 $$ language plpgsql;
 
 CREATE TRIGGER addOrderBonus_trigger

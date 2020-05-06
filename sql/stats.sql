@@ -10,7 +10,7 @@ returns Table (
     month   INTEGER,
     count   INTEGER) as $$
 begin
-    RETURN QUERY 
+    RETURN QUERY
         WITH CustomersCreationDate as (
             SELECT  U.username as username, DATE_PART('YEAR', U.creationdate)::INTEGER as year, DATE_PART('MONTH', U.creationdate)::INTEGER as month
             FROM    Users as U inner join Customers as C on (U.username = C.username))
@@ -18,7 +18,7 @@ begin
         FROM        CustomersCreationDate as CCD
         GROUP BY    (CCD.year, CCD.month)
         ORDER BY    CCD.year DESC, CCD.month DESC;
-end 
+end
 $$ language plpgsql;
 
 CREATE OR REPLACE FUNCTION parseOrdersDate()
@@ -39,14 +39,17 @@ returns Table (
     deliveryFee     MONEY) as $$
 begin
     RETURN QUERY
-        SELECT  
-            O.id, 
+        SELECT
+            O.id,
             O.restaurantName,
             O.customerName,
             O.riderName,
-            DATE_PART('YEAR', O.creation)::INTEGER as year, 
+            DATE_PART('YEAR', O.creation)::INTEGER as year,
             DATE_PART('MONTH', O.creation)::INTEGER as month,
-            (DATE_PART('DAY', O.creation)::INTEGER / 7)  as week,
+            CASE
+                WHEN ((DATE_PART('DAY', O.creation)::INTEGER - 1) / 7) >= 4 THEN 4
+                ELSE ((DATE_PART('DAY', O.creation)::INTEGER - 1) / 7) + 1 
+            END as week,
             O.creation,
             O.departure,
             O.arrival,
@@ -65,7 +68,7 @@ returns Table (
     count   INTEGER,
     sum     MONEY) as $$
 begin
-    RETURN QUERY 
+    RETURN QUERY
         SELECT
             OD.year,
             OD.month,
@@ -74,7 +77,7 @@ begin
         FROM        parseOrdersDate() as OD
         GROUP BY    (OD.year, OD.month)
         ORDER BY    OD.year DESC, OD.month DESC;
-end 
+end
 $$ language plpgsql;
 
 CREATE OR REPLACE FUNCTION customersOrdersStatsMonthly()
@@ -85,17 +88,17 @@ returns Table (
     count           INTEGER,
     sum             MONEY) as $$
 begin
-    RETURN QUERY 
-        SELECT      
+    RETURN QUERY
+        SELECT
             OD.year,
-            OD.month, 
+            OD.month,
             OD.customerName,
             count(OD.id)::INTEGER,
             sum(OD.totalCost + OD.deliveryFee)
         FROM        parseOrdersDate() as OD
         GROUP BY    (OD.year, OD.month, OD.customerName)
         ORDER BY    OD.year DESC, OD.month DESC, OD.customerName ASC;
-end 
+end
 $$ language plpgsql;
 
 -- Special case where we store statistics history, since past salary is determined by past work schedule, which may be different
@@ -112,16 +115,16 @@ returns Table (
     countOrders     INTEGER,
     sumOrdersCost   MONEY) as $$
 begin
-    RETURN QUERY 
+    RETURN QUERY
         SELECT
             OD.year as year,
-            OD.month as month, 
+            OD.month as month,
             count(OD.id)::INTEGER,
             sum(OD.totalCost)
         FROM        parseOrdersDate() as OD
         WHERE       OD.restaurantName = $1
         GROUP BY    (OD.year, OD.month)
-        ORDER BY    year DESC, month DESC;        
+        ORDER BY    year DESC, month DESC;
 end
 $$ language plpgsql;
 
@@ -136,13 +139,13 @@ begin
         WITH RestaurantFoodMonthly AS (
             SELECT
                 OD.year as year,
-                OD.month as month, 
+                OD.month as month,
                 FO.foodName as foodName,
                 sum(FO.quantity)::INTEGER as totalqty
             FROM        parseOrdersDate() as OD LEFT JOIN FoodOrders as FO on (OD.id = FO.orderId)
             WHERE       OD.restaurantName = $1
             GROUP BY    (OD.year, OD.month, FO.foodName))
-        SELECT  
+        SELECT
             helper_query.year as year,
             helper_query.month as month,
             helper_query.foodName as foodName,
@@ -168,7 +171,7 @@ returns Table (
     usecount        INTEGER
     ) as $$
 begin
-    RETURN QUERY 
+    RETURN QUERY
         SELECT
             CP.id,
             CP.code,
@@ -176,7 +179,7 @@ begin
             CP.usecount
         FROM        RestaurantPromotions as RP INNER JOIN CodePromotions as CP on (RP.id = CP.id)
         WHERE       RP.rname = $1
-        ORDER BY    CP.startdate DESC;        
+        ORDER BY    CP.startdate DESC;
 end
 $$ language plpgsql;
 
@@ -186,26 +189,26 @@ $$ language plpgsql;
 
 CREATE OR REPLACE FUNCTION singleRiderOrdersStatsMonthly(VARCHAR(50))
 returns Table (
+    riderName       VARCHAR(50),
     year            INTEGER,
     month           INTEGER,
-    riderName       VARCHAR(50),
     countOrders     INTEGER,
     sumInterval     INTERVAL,
     avgInterval     INTERVAL,
     sumRating       INTEGER,
-    avgRating       INTEGER,
+    avgRating       FLOAT,
     salary          MONEY) as $$
 begin
-    RETURN QUERY 
+    RETURN QUERY
         SELECT      *
         FROM        ridersOrdersStatsMonthly() as ROSM
         WHERE       ROSM.riderName = $1
         ORDER BY    ROSM.year DESC, ROSM.month DESC, ROSM.riderName ASC;
-end 
+end
 $$ language plpgsql;
 
 -- ###############
--- ## Riders #####
+-- ## Customers ##
 -- ###############
 
 CREATE OR REPLACE FUNCTION singleCustomerOrdersStatsMonthly(VARCHAR(50))
@@ -216,10 +219,10 @@ returns Table (
     count           INTEGER,
     sum             MONEY) as $$
 begin
-    RETURN QUERY 
+    RETURN QUERY
         SELECT      *
         FROM        customersOrdersStatsMonthly() as COSM
         WHERE       COSM.customerName = $1
         ORDER BY    COSM.year DESC, COSM.month DESC, COSM.customerName ASC;
-end 
+end
 $$ language plpgsql;

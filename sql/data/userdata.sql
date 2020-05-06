@@ -14,16 +14,24 @@ INSERT INTO Users (username, password) VALUES
 ('customer2', 'password'),
 ('customer3', 'password'),
 ('customer4', 'password'),
-('existinguser', 'password');
+('customer5', 'password'),
+('customer6', 'password'),
+('customer7', 'password'),
+('customer8', 'password'),
+('testuser', 'password');
 
 INSERT INTO Customers(username, cardNumber) VALUES
 ('customer1', '1234567812345678'),
 ('customer2', '8765432187654321'),
-('existinguser', '0000111122223333');
+('customer3', '1234567812345678'),
+('customer4', '8765432187654321'),
+('testuser', '0000111122223333');
 
 INSERT INTO Customers(username) VALUES
-('customer3'),
-('customer4'),
+('customer5'),
+('customer6'),
+('customer7'),
+('customer8'),
 ('oldbird');
 
 -- RIDERS --
@@ -75,7 +83,7 @@ INSERT INTO Users (username, password) VALUES
 ('old ck', 'password'),         -- Old Chang Kee
 ('saladxpasta', 'password'),    -- Salad Express X Pasta Express
 ('reedz', 'password'),          -- Reedz Cafe
-('platypupsgary', 'password'),  -- Platypus Food Bar
+('garytheplatypus', 'password'),  -- Platypus Food Bar
 ('mala', 'password'),           -- Ma La Xiang Guo
 ('teaparty', 'password'),       -- The Tea Party
 ('betterpasta', 'password'),    -- Pasta Express

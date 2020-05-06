@@ -1,7 +1,8 @@
 -- ###############
 -- ## Customer ###
 -- ###############
-CREATE OR REPLACE FUNCTION getRecentLocations(cname VARCHAR(50))  
+
+CREATE OR REPLACE FUNCTION getRecentLocations(cname VARCHAR(50))
 returns Table (
     deliveryLocation    VARCHAR(100),
     latitude    NUMERIC,
@@ -19,9 +20,56 @@ begin
 end
 $$ language plpgsql;
 
+CREATE OR REPLACE FUNCTION useRewardPoints(cname VARCHAR(50), orderid INTEGER)
+RETURNS VOID AS $$
+declare
+    totalcost_int   INTEGER := (
+        SELECT  totalCost
+        FROM    Orders
+        WHERE   id = orderid
+    )::NUMERIC::FLOAT::INTEGER;
+    cur_rewardPoints    INTEGER := (
+        SELECT  rewardPoints
+        FROM    Customers
+        WHERE   username = cname
+    );
+    RATE            INTEGER := 20;
+    rebate_int      INTEGER := CASE
+        WHEN (totalcost_int < (cur_rewardPoints / RATE)) THEN
+            totalcost_int
+        ELSE
+            (cur_rewardPoints / RATE)
+        END;
+begin
+    UPDATE  Orders
+    SET     totalCost = totalCost - rebate_int::MONEY
+    WHERE   id = orderid;
+
+    UPDATE  Customers
+    SET     rewardPoints = rewardPoints - (rebate_int * RATE)
+    WHERE   username = cname;
+end
+$$ language plpgsql;
+
+-- Adds reward points for the customer based on the order's total cost
+CREATE OR REPLACE FUNCTION updateRewardPoints(cname VARCHAR(50), orderid INTEGER)
+RETURNS VOID AS $$
+declare
+    totalcost_int   INTEGER := (
+        SELECT  totalCost
+        FROM    Orders
+        WHERE   id = orderid
+    )::NUMERIC::FLOAT::INTEGER;
+begin
+    UPDATE  Customers
+    SET     rewardPoints = rewardPoints + totalcost_int
+    WHERE   username = cname;
+end
+$$ language plpgsql;
+
 -- ###############
 -- #### Rider ####
--- ###############  
+-- ###############
 
 CREATE OR REPLACE FUNCTION getOrderInfo(riderName VARCHAR(50))
 returns Table(
@@ -70,7 +118,7 @@ CREATE OR REPLACE FUNCTION findAvailable(TIMESTAMPTZ)
 returns Table (
     username    VARCHAR(50),
     latitude    NUMERIC,
-    longitude   NUMERIC) as $$ 
+    longitude   NUMERIC) as $$
 declare
     day     INTEGER := 0;
     shift   INTEGER := 0;
@@ -85,7 +133,7 @@ begin
         shift := shift - 9; -- 10:00 is index 1
     END IF;
     -- Return all available riders
-    RETURN  QUERY 
+    RETURN  QUERY
         SELECT  R.username, R.latitude, R.longitude
         FROM    PartTimeRiders PTR, Riders R
         WHERE   (PTR.ws[day][shift]) AND (PTR.username = R.username) AND (R.orderid IS NULL)
@@ -93,14 +141,14 @@ begin
         SELECT  R.username, R.latitude, R.longitude
         FROM    FullTimeRiders FTR, Riders R
         WHERE   (FTR.ws[day][shift]) AND (FTR.username = R.username) AND (R.orderid IS NULL);
-end 
+end
 $$ language plpgsql;
 
 -- $1:          restaurant name
 -- $2:          current time, with timezone
 -- ret:         username of closest available rider
 CREATE OR REPLACE FUNCTION findNearestAvailableRider(VARCHAR(100), TIMESTAMPTZ)
-returns VARCHAR(50) as $$ 
+returns VARCHAR(50) as $$
 declare
     chosenone   VARCHAR(50);
 begin
@@ -123,26 +171,36 @@ begin
     END IF;
 
     return chosenone;
-end 
+end
 $$ language plpgsql;
 
--- Update departure time of the order (by the rider)
-CREATE OR REPLACE FUNCTION riderDeparture(
-    riderName   VARCHAR(50),
-    currenttime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
-returns TIMESTAMP as $$
-declare
+-- Check what is the status of the current rider w.r.t the order
+CREATE OR REPLACE FUNCTION riderStatus(
+    riderName VARCHAR(50)
+) returns VARCHAR(20) AS $$
+DECLARE
     oid INTEGER := (SELECT orderid FROM Riders WHERE username = riderName);
-begin
+    departure TIMESTAMP := (SELECT departure FROM Orders WHERE id = oid);
+    arrival TIMESTAMP := (SELECT arrival FROM Orders WHERE id = oid);
+    collection TIMESTAMP := (SELECT collection FROM Orders WHERE id = oid);
+    delivery TIMESTAMP := (SELECT delivery FROM Orders WHERE id = oid);
+BEGIN
     IF oid IS NULL THEN
-        RAISE EXCEPTION 'Rider % does not have an order', riderName;
+        RETURN 'none';
     END IF;
 
-    UPDATE  Orders
-    SET     departure = currenttime
-    WHERE   id = oid;
-    RETURN currenttime;
-end
+    IF departure IS NULL THEN
+        RETURN 'departure';
+    ELSIF arrival IS NULL THEN
+        RETURN 'arrival';
+    ELSIF collection IS NULL THEN
+        RETURN 'collection';
+    ELSIF delivery IS NULL THEN
+        RETURN 'delivery';
+    ELSE
+        RAISE EXCEPTION 'Rider % has already delivered order', riderName;
+    END IF;
+END
 $$ language plpgsql;
 
 -- Update departure time of the order (by the rider)
@@ -233,7 +291,7 @@ declare
     rider   RECORD;
 begin
     FOR rider in SELECT * FROM PartTimeRiders LOOP
-        UPDATE  PartTimeRiders 
+        UPDATE  PartTimeRiders
         SET     weeksalary = calculateBaseSalary(username)
         WHERE   username = rider.username;
     END LOOP;
@@ -247,7 +305,7 @@ declare
     rider   RECORD;
 begin
     FOR rider in SELECT * FROM FullTimeRiders LOOP
-        UPDATE  FullTimeRiders 
+        UPDATE  FullTimeRiders
         SET     monthsalary = calculateBaseSalary(username) * 4
         WHERE   username = rider.username;
     END LOOP;
@@ -258,7 +316,7 @@ $$ language plpgsql;
 CREATE OR REPLACE FUNCTION _freeRiders()
 returns VOID as $$
 begin
-    UPDATE  Riders 
+    UPDATE  Riders
     SET     orderid = NULL;
 end
 $$ language plpgsql;
@@ -294,5 +352,14 @@ begin
         WHERE
             CP.startDate <= CURRENT_TIMESTAMP AND
             (CP.endDate is NULL OR CURRENT_TIMESTAMP <= CP.endDate));
+end
+$$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION getDOW(INTEGER)
+returns TEXT as $$
+declare
+    dow TEXT[7] := '{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}';
+begin
+    RETURN dow[$1];
 end
 $$ language plpgsql;

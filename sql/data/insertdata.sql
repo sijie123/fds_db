@@ -5,7 +5,8 @@
 \i data/locationdata.sql
 \i data/restaurantfooddata.sql
 \i data/promotiondata.sql
-\i data/orderreviewrating.sql
+\i data/orderreviewrating_completed.sql
+\i data/orderreviewrating_ongoing.sql
 
 CREATE OR REPLACE FUNCTION initRiderStats()
 RETURNS VOID AS $$
