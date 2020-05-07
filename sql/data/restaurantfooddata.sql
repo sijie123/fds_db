@@ -132,14 +132,14 @@ INSERT INTO Food (name, restaurantName, price, maxQty, currQty) VALUES
 ('Shin Ramyun', 'OMO Store', 2.20, 20, 20),
 ('Kang Shi Fu Roast Beef Noodle', 'OMO Store', 2.20, 20, 20),
 ('Original Tauhuay', 'OMO Store', 1.20, 20, 20),
-('Earl Grey Milk Tea', 'Gongcha', 3, 0, 0),
-('Green Milk Tea', 'Gongcha', 3, 0, 0),
-('Taro Milk Tea', 'Gongcha', 3.6, 0, 0),
-('Milk Tea w Herbal Jelly', 'Gongcha', 3.7, 0, 0),
-('Earl Grey Milk Tea w 3J', 'Gongcha', 4.4, 0, 0),
-('Pearl Milk Tea', 'Gongcha', 3.4, 0, 0),
-('QQ Passion Fruit Green Tea', 'Gongcha', 4.2, 0, 0),
-('Caramel Milk Tea', 'Gongcha', 3.5, 0, 0)
+('Earl Grey Milk Tea', 'Gongcha', 3, 10, 10),
+('Green Milk Tea', 'Gongcha', 3, 20, 10),
+('Taro Milk Tea', 'Gongcha', 3.6, 20, 10),
+('Milk Tea w Herbal Jelly', 'Gongcha', 3.7, 5, 5),
+('Earl Grey Milk Tea w 3J', 'Gongcha', 4.4, 5, 0),
+('Pearl Milk Tea', 'Gongcha', 3.4, 5, 0),
+('QQ Passion Fruit Green Tea', 'Gongcha', 4.2, 10, 10),
+('Caramel Milk Tea', 'Gongcha', 3.5, 10, 10)
 ;
 
 -- CATEGORIES --

@@ -127,7 +127,7 @@ begin
     -- Parse the timestamp
     day     := EXTRACT(ISODOW FROM ts)::INTEGER;
     shift   := EXTRACT(HOUR FROM ts)::INTEGER;
-    IF (shift < 10 OR shift > 22) THEN
+    IF (shift < 10 OR shift >= 22) THEN
         RAISE EXCEPTION 'FDS closed at %', ts;
     ELSE
         shift := shift - 9; -- 10:00 is index 1

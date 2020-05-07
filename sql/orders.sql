@@ -78,22 +78,24 @@ CREATE TRIGGER assign_order_to_rider_trigger
     FOR EACH ROW
     EXECUTE PROCEDURE assign_order_to_rider();
 
+-- DEPRECATED, SEE updateRewardPoints()
 -- When an order is added, we add reward points for the customer
-CREATE OR REPLACE FUNCTION add_points()
-returns TRIGGER AS $$
-begin
-    UPDATE  Customers
-    SET     rewardPoints = rewardPoints + NEW.totalCost::NUMERIC::FLOAT::INTEGER
-    WHERE   username = NEW.customerName;
-    return NEW;
-end
-$$ language plpgsql;
+--CREATE OR REPLACE FUNCTION add_points()
+--returns TRIGGER AS $$
+--begin
+--    UPDATE  Customers
+--    SET     rewardPoints = rewardPoints + NEW.totalCost::NUMERIC::FLOAT::INTEGER
+--    WHERE   username = NEW.customerName;
+--    return NEW;
+--end
+--$$ language plpgsql;
 
-CREATE TRIGGER add_points_trigger
-    AFTER INSERT
-    ON Orders
-    FOR EACH ROW
-    EXECUTE PROCEDURE add_points();
+-- DEPRECATED
+--CREATE TRIGGER add_points_trigger
+--    AFTER INSERT
+--    ON Orders
+--    FOR EACH ROW
+--    EXECUTE PROCEDURE add_points();
 
 CREATE OR REPLACE FUNCTION addOrderBonus()
 returns TRIGGER as $$

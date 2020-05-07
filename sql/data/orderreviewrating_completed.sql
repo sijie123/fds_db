@@ -24,6 +24,7 @@ begin;
         (oid, 'The Tea Party', 'Carbonara', cname, 5, '');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 5);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -52,6 +53,7 @@ begin;
         (oid, 'Maxx Coffee', 'Lemon Meringue Pie', cname, 5, 'Good');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 4);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -78,6 +80,7 @@ begin;
         (oid, 'Uncle Penyet', 'Crispy Chicken Wings (4pcs)', cname, 5, '');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 5);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -104,6 +107,7 @@ begin;
         (oid, 'Uncle Penyet', 'Crispy Chicken Wings (4pcs)', cname, 5, '');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 5);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -125,6 +129,7 @@ begin;
         INSERT INTO FoodOrders (orderId, restaurantName, foodName, quantity) VALUES
         (oid, 'Maxx Coffee', 'Flat White', 1),
         (oid, 'Maxx Coffee', 'Lemon Meringue Pie', 1);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -146,6 +151,7 @@ begin;
         INSERT INTO FoodOrders (orderId, restaurantName, foodName, quantity) VALUES
         (oid, 'Maxx Coffee', 'Flat White', 1),
         (oid, 'Maxx Coffee', 'Lemon Meringue Pie', 1);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -169,6 +175,7 @@ begin;
         (oid, 'Platypus Food Bar', 'Milk Coffee (L)', 1),
         (oid, 'Platypus Food Bar', 'Red Velvet Coffee (M)', 1),
         (oid, 'Platypus Food Bar', 'Butterscotch Coffee (M)', 1);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -195,6 +202,7 @@ begin;
         (oid, 'The Tea Party', 'Carbonara', cname, 5, '');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 5);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -223,6 +231,7 @@ begin;
         (oid, 'Maxx Coffee', 'Lemon Meringue Pie', cname, 5, 'Good');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 4);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -249,6 +258,7 @@ begin;
         (oid, 'Uncle Penyet', 'Crispy Chicken Wings (4pcs)', cname, 5, '');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 5);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -275,6 +285,7 @@ begin;
         (oid, 'Uncle Penyet', 'Crispy Chicken Wings (4pcs)', cname, 5, '');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 5);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -296,6 +307,7 @@ begin;
         INSERT INTO FoodOrders (orderId, restaurantName, foodName, quantity) VALUES
         (oid, 'Maxx Coffee', 'Flat White', 1),
         (oid, 'Maxx Coffee', 'Lemon Meringue Pie', 1);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -317,6 +329,7 @@ begin;
         INSERT INTO FoodOrders (orderId, restaurantName, foodName, quantity) VALUES
         (oid, 'Maxx Coffee', 'Flat White', 1),
         (oid, 'Maxx Coffee', 'Nitro Cold Brew', 1);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -340,6 +353,7 @@ begin;
         (oid, 'Platypus Food Bar', 'Milk Coffee (L)', 1),
         (oid, 'Platypus Food Bar', 'Red Velvet Coffee (M)', 1),
         (oid, 'Platypus Food Bar', 'Butterscotch Coffee (M)', 1);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -364,6 +378,7 @@ begin;
         (oid, 'Li Ji Coffeehouse', 'Breakfast Set B', cname, 0, 'Eggshell in my food');
         INSERT INTO DeliveryRatings (orderId, riderName, customerName, rating) VALUES
         (oid, rname, cname, 2);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;

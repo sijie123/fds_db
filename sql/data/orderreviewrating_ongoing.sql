@@ -15,6 +15,26 @@ begin;
         PERFORM riderArrival(rname);
         INSERT INTO FoodOrders (orderId, restaurantName, foodName) VALUES
         (oid, 'Ma La Xiang Guo', 'Mala');
+        PERFORM updateRewardPoints(cname, oid);
+	end
+	$$;
+commit;
+
+begin;
+	DO $$
+	declare
+		oid     INTEGER;
+        rname   VARCHAR(50) := 'rider2';
+        cname   VARCHAR(50) := 'customer1';
+	begin
+		INSERT INTO Orders (deliveryLocation, totalCost, paymentMethod, creation, restaurantName, customerName, riderName) VALUES
+        ('COM1', 18.5, 'CARD', '2020-05-02 17:01', 'Central Square', 'customer1', rname);
+        SELECT MAX(id) INTO oid FROM Orders;
+        INSERT INTO FoodOrders (orderId, restaurantName, foodName, quantity) VALUES
+        (oid, 'Central Square', 'Octopus Takoyaki (5pcs)', 3),
+        (oid, 'Central Square', 'Prawn Takoyaki (3pcs)', 2),
+        (oid, 'Central Square', 'Ham Takoyaki (4pcs)', 4);
+        PERFORM updateRewardPoints(cname, oid);
 	end
 	$$;
 commit;
@@ -33,6 +53,7 @@ begin;
         (oid, 'Central Square', 'Octopus Takoyaki (5pcs)', 3),
         (oid, 'Central Square', 'Prawn Takoyaki (3pcs)', 2),
         (oid, 'Central Square', 'Ham Takoyaki (4pcs)', 4);
+        PERFORM updateRewardPoints('customer1', oid);
 	end
 	$$;
 commit;
@@ -55,6 +76,7 @@ begin;
         (oid, 'Jewel Coffee', 'Cold-Brew Iced Tea', 1);
         PERFORM riderDeparture(rname);
         PERFORM riderArrival(rname);
+        PERFORM updateRewardPoints('customer2', oid);
 	end
 	$$;
 commit;
@@ -76,6 +98,7 @@ begin;
         PERFORM riderDeparture(rname);
         PERFORM riderArrival(rname);
         PERFORM riderCollection(rname);
+        PERFORM updateRewardPoints('customer2', oid);
 	end
 	$$;
 commit;
