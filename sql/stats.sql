@@ -195,12 +195,13 @@ returns Table (
     countOrders     INTEGER,
     sumInterval     INTERVAL,
     avgInterval     INTERVAL,
+    countRating     INTEGER,
     sumRating       INTEGER,
     avgRating       FLOAT,
     salary          MONEY) as $$
 begin
     RETURN QUERY
-        SELECT      ROSM.riderName, ROSM.year, ROSM.month, ROSM.countOrders, ROSM.sumInterval, ROSM.avgInterval, ROSM.sumRating, ROSM.avgRating, ROSM.salary
+        SELECT      ROSM.riderName, ROSM.year, ROSM.month, ROSM.countOrders, ROSM.sumInterval, ROSM.avgInterval, ROSM.countRating, ROSM.sumRating, ROSM.avgRating, ROSM.salary
         FROM        ridersOrdersStatsMonthly() as ROSM
         WHERE       ROSM.riderName = $1
         ORDER BY    ROSM.year DESC, ROSM.month DESC, ROSM.riderName ASC;
